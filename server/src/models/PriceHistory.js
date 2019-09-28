@@ -1,5 +1,5 @@
 module.exports=(sequelize, DataTypes)=>{
-	sequelize.define('PriceHistory',{
+	return sequelize.define('PriceHistory',{
 		price: DataTypes.INTEGER
 	})
 }
