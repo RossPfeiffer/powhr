@@ -26,14 +26,6 @@ let state = {
   estimatedResolves:'0',
   avgHodlRelease:'0',
   yourHodl:'0',
-  collectiveCurrentHodl:'0',
-
-  ethToDonate:0,
-  totalEth4Launch:'0',
-  totalEthDonated:'0',
-  yourEth4Launch:'0',
-  launchContract:'0x000000',
-  developerAddress:"0x00",
-  contractToPropose:"0x000"
+  collectiveCurrentHodl:'0'
 }
 export default state

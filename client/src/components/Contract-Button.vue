@@ -20,4 +20,16 @@ export default {
 </script>
 
 <style scoped>
+
+button{
+  background:#f5f5f5;
+  border-style:solid;
+  border-width:1.5px;
+  border-color:#444;
+  padding:7px;
+  color: #444;
+  position: relative;
+  cursor: pointer;
+  text-decoration: none;
+}
 </style>

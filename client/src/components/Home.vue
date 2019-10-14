@@ -2,45 +2,53 @@
   <div>
     <nav-menu></nav-menu>
     <div id="splash">
-      <div class="content">
+      <!--<div class="content">
         <h1>Ethereum's True Scaling Solution</h1>
         <p>
           Scaling the blockchain has profound implications for transaction capacity, anchoring unique value to the ecosystem, and the underlying mechanism has even more.
         </p>
-        <!--<button id="go-to-exchange">White Paper</button>
+        <button id="go-to-exchange">White Paper</button>
         <button id="go-to-testnet">Testnet</button>
-        <button id="go-to-exchange">Exchange</button>-->
+        <button id="go-to-exchange">Exchange</button>
       </div>
       <div class="graphic">
         <img src="../assets/pyramid.svg">
-      </div>
+      </div>-->
+      <center class="big-image"><img src="../assets/tokenomics.png"> </center>
       <div class="clear"></div>
       <div id="timer">
-        <h4>Coming Soon</h4>
-        <Countdown end="June 1, 2019 18:00"></Countdown>
+        <h2>Pyramid Schemes are the Scaling Solution</h2>
+
+        <!--<a class="button">White Paper</a>
+        <a class="button">Exchange</a>
+        <a class="button">Telegram</a>-->
+        <!--<Countdown :end="personalizedTime"></Countdown>-->
+        <!--<Countdown :end="personalizedTime"></Countdown>-->
+        <a href="https://gist.github.com/Econymous/2e7aa07622bf55619b9790f2fb2190c8" class="button">Git</a>
+        <router-link class="button" to="/contract">Exchange</router-link>
+        <a href="https://t.me/PrismTokenomics" class="button" target="_blank">Telegram</a>
+
       </div>
     </div>
-    <div id="benefits">
+    <!--<div id="benefits">
       <div class="benefit">
         <img src="../assets/tokenomics.png"/>
         <h3>Real Tokenomics</h3>
         <p>The Resolve contract presents a duel incentive structure that functions as an engine for economic wealth generation.</p>
       </div>
       <div class="benefit">
-        <!-- Scale by Graphic Tigers from the Noun Project -->
         <img src="../assets/intrinsic.png"/>
         <h3>Intrinsic Value</h3>
         <p>Resolve Tokens are evenly distributed by economic forces and have a base value derived from their ability to collect fees from the core contract.</p>
       </div>
       <div class="benefit">
         <img src="../assets/scalability.png"/>
-        <!--By Meaghan Hendricks, US | In the Data Visualization and Structure Collection-->
         <h3>Elegant Scalability</h3>
         <p>Perfect distribution stabalizes nested proof-of-stake sidechains using an entirely new financial instrument that has an "inflationary defense" mechanism against whales.</p>
       </div>
       <div class="clear"></div>
-    </div>
-    <div id="potentials">
+    </div>-->
+    <!--<div id="potentials">
       <div class="content">
         <h2>The Potentials of Resolve Distribution</h2>
         <div id="potential-grid">
@@ -90,8 +98,8 @@
           </div>
         </div>
       </div>
-    </div>
-    <footer id="footer">
+    </div>-->
+    <!--<footer id="footer">
       <div class="content">
         <div class="footer-goods">
           <h5>Community</h5>
@@ -104,20 +112,6 @@
         <div class="footer-goods">
           <h5>Resolve Contracts</h5>
           <div class="split-list">
-            <!--<ul class="">
-              <li>PoWH3D</li>
-              <li>Elastos</li>
-              <li>FOAM / XYO</li>
-              <li>ETC</li>
-              <li>Enjin</li>
-            </ul>
-            <ul class="">
-              <li>BSV</li>
-              <li>Enigma</li>
-              <li>DAI</li>
-              <li>0xBTC</li>
-              <li>Ghandiji</li>
-            </ul>-->
             <ul class="">
               <li>________</li>
               <li>______</li>
@@ -145,8 +139,8 @@
           </ul>
         </div>
       </div>
-      <div id="floor">Credits | Donate: <a href="#">BTC</a>, <a href="#">ETH</a>, <a href="#">BSV</a>, <a href="#">BLOCK</a> </div>
-    </footer>
+      <div id="floor">0x0000000000000000000000</div>
+    </footer>-->
   </div>
 </template>
 
@@ -159,14 +153,28 @@ export default {
   components:{
     NavMenu,
     Countdown
-  }
+  },
+  created(){
+    var d = (new Date()).getTimezoneOffset()/60;//20:00
+    console.log(d)
+    var zone_o_clock = 16 + d
+    this.personalizedTime = "October 11, 2019 " + zone_o_clock + ":00" 
+  },
+  data(){return{
+    personalizedTime: ""
+  }}
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.big-image img{
+  max-width:50%;
+  -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+  filter: grayscale(100%);
+}
 #splash{
-  background-color: #bbb;
+  background-color: #efefef;
   padding:75px;
   padding-bottom:50px;
   color:#444;
@@ -203,15 +211,11 @@ export default {
   top:100px;
   left:100px;*/
 }
-.content h1,h2{
-  margin:0;
-  padding:0;
-}
 .content p{
   text-indent: 30px;
   /*width:calc(100% - 200px);*/
 }
-.button{
+#splash .button{
   background:none;
   border-style:solid;
   border-width:1px;
@@ -220,6 +224,10 @@ export default {
   color: #444;
   position: relative;
   top:16px;
+  cursor: pointer;
+  text-decoration: none;
+  width:100px;
+  display: inline-block;
 }
 .content .button{
   float:right;

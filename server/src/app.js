@@ -13,10 +13,15 @@ app.use( cors() )
 
 console.log("adding routes")
 require('./routes')(app)
-
+console.log("added routes")
+/*
+sequelize.authenticate()
+  .then(() => console.log('Database connected...'))
+  .catch(err => console.log('Error: ' + err))
+*/
+console.log("What is the port it's aiming for? ::: ", config.port)
 sequelize.sync()
 	.then(()=>{
-
-		app.listen(process.env.PORT || 8081)
-		console.log(`SErver started on port ${config.port}`)
+		app.listen(8081)
+		console.log(`Database Server started on port ${config.port}`)
 	})

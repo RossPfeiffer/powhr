@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from '@/components/Home'
-import Market from '@/components/Market'
+import Contract from '@/components/Contract'
 import FundRaiser from '@/components/FundRaiser'
 
 Vue.use(Router)
@@ -14,9 +14,9 @@ export default new Router({
       component: Home
     },
     {
-      path: '/market',
-      name: 'Market',
-      component: Market
+      path: '/contract',
+      name: 'Contract',
+      component: Contract
     }/*,
     {
       path: '/fundraiser',

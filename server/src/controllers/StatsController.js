@@ -1,4 +1,4 @@
-const {PriceHistory} = require('../models')
+const {BuyPrice} = require('../models')
 
 const web3 = require('web3')
 
@@ -14,10 +14,11 @@ module.exports= {
 	},
 	async updateBackendStats (req,res){
 		console.log("Started Updating Back-end stats")
-		console.log("----\n----\n----\n----\n----\n----\n----\n----\n",PriceHistory)
+		console.log("----\n----\n----\n----\n----\n----\n----\n----\n",BuyPrice)
 		//const user = await 
-		let promise = await PriceHistory.create( {price:89} )
-		console.log(promise)
+		let promise = await BuyPrice.create( {price:89, time:989} )
+		//console.log(promise)
 		console.log("Finished Updating Back-end stats")
+		res.send( "New ENtry?" )
 	}
 }

@@ -1,8 +1,8 @@
 module.exports={
-	port: process.env.PORT || 8081,
+	port: process.env.PORT || 5432,
 	db:{
-		database: process.env.DB_NAME || 'stats',
-		user: process.env.DB_USER || 'stats',
+		database: process.env.DB_NAME || 'postgres',
+		user: process.env.DB_USER || 'postgres',
 		password: process.env.DB_PASS || 'admin',
 		options:{
 			host: process.env.HOST || 'localhost',	

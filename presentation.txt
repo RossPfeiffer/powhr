@@ -1,0 +1,48 @@
+Remaining Concern:
+	- Is inflationary defense good enough?
+
+Get out the way
+	shit I don't want to hear about:
+		- marketing budget
+		- how I suck at communication
+
+	Disclaimers:
+		- This is going to sound too good to be true
+		- I'm going to talk my shit as if it was delivered from satoshi's mouth directly
+
+	Hype:
+		- Infinity stone
+			It's not the end all, be all, but it's a mother fucking infinity stone.
+
+
+3 things that all true blockchain enthusiast hate
+	- proof of stake
+	- scammy token sales
+	- pyramid schemes
+
+
+What's the move?
+	Potentials:
+		-Scaling Solution ( Mesh of Chains / BFT )
+		-lvl1 IPFS killer ( BSV variable block size )
+		-Crowdsourcing creative content
+		-Truly Unique Value. Fork Resistent (beacuse they can't fork all of the sidechain)
+		-Distributed Ownership of Hardware
+			-GPS
+			-Proof of Manufacturing
+			-Privacy / Trusted Execution Environments
+			-lvl2 IPFS killer (dedicated and secured storage devices)
+			-Decentralize Social Networks, MMORPGs, and Other services
+
+	Talking Shit:
+		-Drug War via untouchable GPS & Privacy network
+
+Mechanics of Distribution:
+	-pyramid
+	-loss & hodl multipliers
+	-dissolves
+
+Variations:
+	-Half Lock, Half Pyramid. Good for governance that doesn't need a lot of money involved.
+	-Migrating existing tokens to a real tokenomics model. Stake existing tokens for a % on all resolve returns, or for divs
+	-Hard coding in a developer fund where resolve token holders can vote on who to hire

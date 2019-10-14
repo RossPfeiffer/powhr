@@ -11,10 +11,6 @@ const sequelize = new Sequelize(
 	config.db.options
 )
 
-/*sequelize.authenticate()
-  .then(() => console.log('Database connected...'))
-  .catch(err => console.log('Error: ' + err))
-*/
 
 console.log("Collect Models...")
 fs

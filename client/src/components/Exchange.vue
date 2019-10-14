@@ -6,14 +6,16 @@
         <contract-data label="Circulating Bonds" :value="totalBondSupply" :img="bondsIcon" />
         <contract-data label="Resolve Pool" :value="totalStakedResolves" :img="resolveIcon" />
         <contract-data label="Resolve Fee" :value="resolveFee" :img="feeIcon" />
-        <contract-data label="Release Hodl" :value="avgHodlRelease" :img="feeIcon" />
+        <contract-data label="Release Hodl" :value="avgHodlRelease" :img="clockIcon" />
       </div>
     </control-box>
     <control-box id="" title="Buy">
       <contract-data label="Buy Price" :value="buyPrice" />
       <contract-input label="ETH to spend" placeholder="e.g. 0.12" commit="ethToSpend" :onChange="estimateBonds"/>
-      <contract-button action="buyBonds">Buy Bonds</contract-button>
-      <chrome v-model="buyColor"/>
+      <contract-button action="buyBonds">Buy Bonds</contract-button><!--<button id="bond-color-picker" v-on:click="openColorBox"></button>-->
+      <!--<modal name="color-box">
+        <ColorPicker :width="300" :height="300" :disabled="false" startColor="#ff0000" @colorChange="onColorChange"></ColorPicker>
+      </modal>-->
       <contract-data label="Estimated Bonds" :value="estimatedBonds" />
     </control-box>
     <control-box id="" title="Your Account">
@@ -21,7 +23,7 @@
         <contract-data label="Bonds" :value="yourBonds" :img="bondsIcon" />
         <contract-data label="ETH Value" :value="yourBondValue" :img="ethIcon" />
         <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon" />
-        <contract-data label="Your Hodl" :value="yourHodl" :img="feeIcon" />
+        <contract-data label="Your Hodl" :value="yourHodl" :img="clockIcon" />
       </div>
     </control-box>
     <control-box id="" title="Sell">
@@ -56,7 +58,8 @@
   import ContractInput from '@/components/Contract-Input'
   import ContractButton from '@/components/Contract-Button'
   import VueCharts from 'vue-chartjs'
-  import {Chrome} from 'vue-color'
+  import ColorPicker from 'vue-color-picker-wheel'
+
   console.log("Sketttttch")
   //console.log(Sketch)
   export default {
@@ -66,19 +69,28 @@
     },
     data(){return{
       ethIcon:require('@/assets/eth-icon.png'),
-      resolveIcon:require('@/assets/resolve-icon.png'),
+      resolveIcon:require('@/assets/resolve.png'),
       feeIcon:require('@/assets/resolver-fee-icon.png'),
-      bondsIcon:require('@/assets/bonds-icon.png'),
+      bondsIcon:require('@/assets/bonds.png'),
+      clockIcon:require('@/assets/clock.png'),
       estimateBonds(){this.$store.dispatch("estimateBonds")},
       estimateReturns(){this.$store.dispatch("estimateReturns")},
       buyColor:{ r: 255, g: 0, b: 0 }
     }},
+    methods: {
+      onColorChange(color) {
+        console.log('Color has changed to: ', color);
+      },
+      openColorBox(){
+        this.$modal.show("color-box")
+      }
+    },
     components: {
       ControlBox,
       ContractData,
       ContractInput,
       ContractButton,
-      Chrome
+      ColorPicker
     },
     computed:{
       ...mapState([

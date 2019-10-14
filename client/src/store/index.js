@@ -15,6 +15,7 @@ var web3, BN;
 var powhrAPI, tokenAPI, resolveContract, tokenContract
 
 var Big = require('big.js')
+var asdf = 0;
 
 Vue.use(Vuex)
 export const store = new Vuex.Store({
@@ -124,8 +125,8 @@ export const store = new Vuex.Store({
     },
     updateCycle: async({commit,dispatch,state})=>{
       setInterval(function(){
-        if(state.rpcActive) { /*
-          */
+        if(state.rpcActive) { /**/
+          
           powhrAPI.totalSupply().call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e12)
@@ -134,13 +135,13 @@ export const store = new Vuex.Store({
           }).catch( err )
 
           
-          powhrAPI.poolFunds().call().then( (r)=>{
+          /*powhrAPI.poolFunds().call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e18)
             let funds = bigR.toFixed(4)
             commit("update_poolFunds", funds)
-          })
-
+          })*/
+          
           powhrAPI.sellSum().call().then( (ss)=>{
             if (ss>0){
               powhrAPI.avgHodl().call().then( (r)=>{
@@ -199,8 +200,9 @@ export const store = new Vuex.Store({
           powhrAPI.pricing(1e12+"").call().then( (r)=>{
             commit( "update_buyPrice", (r[0]/1e18).toFixed(9) )
             commit( "update_sellPrice", (r[1]/1e18).toFixed(9) )
-            commit("update_resolveFee",  ( eth.int(r[2])/1e10 ).toFixed(2)+"%" )
-          })
+            asdf = eth.int(r[2])/1e10
+            commit("update_resolveFee",  ( asdf ).toFixed(2)+"%" )
+          })/**/
           
 
           powhrAPI.balanceOf(state.currentAddress).call().then( (r)=>{
@@ -209,7 +211,9 @@ export const store = new Vuex.Store({
             let bonds = bigR.toFixed(2)
             commit("update_yourBonds", bonds )
             powhrAPI.getEtherForBonds( r ).call().then( (rr)=>{
-              commit("update_yourBondValue",eth.convertWeiToEth( eth.int(rr) )
+              //commit("update_yourBondValue",eth.convertWeiToEth( eth.int(rr) 
+              //commit("update_yourBondValue",eth.convertWeiToEth( 0 )
+              commit("update_yourBondValue",eth.convertWeiToEth( eth.int( rr*(1-asdf/100) ) )                
               .toFixed(5).toString())
             })
           })
@@ -253,7 +257,8 @@ export const store = new Vuex.Store({
       console.log(number)
       if (Number.isNaN(number)) number = 0
       if (number > 0){
-        powhrAPI.getBondsForEther( weiForm(state.ethToSpend) ).call().then( (r)=>{
+        let x = parseFloat(state.ethToSpend) * ( 1 - asdf/100 ) +''
+        powhrAPI.getBondsForEther( weiForm( x ) ).call().then( (r)=>{
           console.log("What the contract gives back")
           console.log(r)
           let bigR = Big( r.toString() )
@@ -272,6 +277,7 @@ export const store = new Vuex.Store({
           console.log(r)
           let bigE = Big( r[0].toString() )
           bigE = bigE.div(1e18)
+          bigE = bigE.div( 1/(1 - asdf/100)  )
           let eth = bigE.toFixed(9)
 
           let bigR = Big( r[1].toString() )
