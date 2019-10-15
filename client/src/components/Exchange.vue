@@ -9,22 +9,25 @@
         <contract-data label="Release Hodl" :value="avgHodlRelease" :img="clockIcon" />
       </div>
     </control-box>
-    <control-box id="" title="Buy">
+    <control-box id="buy-box" title="Buy">
       <contract-data label="Buy Price" :value="buyPrice" />
       <contract-input label="ETH to spend" placeholder="e.g. 0.12" commit="ethToSpend" :onChange="estimateBonds"/>
-      <contract-button action="buyBonds">Buy Bonds</contract-button><!--<button id="bond-color-picker" v-on:click="openColorBox"></button>-->
-      <!--<modal name="color-box">
-        <ColorPicker :width="300" :height="300" :disabled="false" startColor="#ff0000" @colorChange="onColorChange"></ColorPicker>
-      </modal>-->
+      <contract-button action="buyBonds">Buy Bonds</contract-button>
+      <button id="bond-color-picker" v-on:click="openColorBox" v-bind:style="{ backgroundColor: buyColor}"></button>
+      <modal id="color-box" name="color-box" :width="240" :height="240" classes="color-modal">
+        <ColorPicker :width="240" :height="240" :disabled="false" :startColor="buyColor" @colorChange="onColorChange"></ColorPicker>
+      </modal>
       <contract-data label="Estimated Bonds" :value="estimatedBonds" />
     </control-box>
     <control-box id="" title="Your Account">
-      <div id="wallet-grid">
-        <contract-data label="Bonds" :value="yourBonds" :img="bondsIcon" />
+        <contract-data label="Bonds" :value="yourBonds" :img="bondsIcon"  v-bind:style="{ backgroundColor: bondColor}"/>
         <contract-data label="ETH Value" :value="yourBondValue" :img="ethIcon" />
-        <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon" />
+        <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon" v-if="mode!='color'"/>
         <contract-data label="Your Hodl" :value="yourHodl" :img="clockIcon" />
-      </div>
+        <div class="gap"></div>
+        <div class="gap"></div>
+        <div class="gap"></div>
+        <!--<div class="gap"><div class="color-indicator" v-bind:style="{ backgroundColor: bondColor}"><img :src="bondsIcon"/>Bonds</div></div>-->
     </control-box>
     <control-box id="" title="Sell">
       <contract-data label="Sell Price" :value="sellPrice" />
@@ -34,11 +37,13 @@
       <contract-data label="Estimated Resolves" :value="estimatedResolves" />
     </control-box>
     <control-box id="" title="Resolve">
+      <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon"  v-if="mode=='color'" v-bind:style="{ backgroundColor: resolveColor}"/>
+      <!--<div v-if="mode=='color'" class="gap"><div class="color-indicator" v-bind:style="{ backgroundColor: resolveColor}"><img :src="resolveIcon"/>Resolves</div></div>-->
       <contract-data label="Resolves Staking" :value="yourStakedResolves" :img="resolveIcon"/>
       <contract-input label="Stake Resolves" placeholder="e.g. 1200" commit="resolvesToStake"/>
       <contract-button action="stakeResolves">Stake Resolves</contract-button>
-      <contract-input label="Pull Resolves" placeholder="e.g. 1200" commit="resolvesToPull"/>
-      <contract-button action="pullResolves">Pull Resolves</contract-button>
+      <contract-input v-if="mode!='color'" label="Pull Resolves" placeholder="e.g. 1200" commit="resolvesToPull"/>
+      <contract-button v-if="mode!='color'" action="pullResolves">Pull Resolves</contract-button>
     </control-box>
     <control-box id="" title="Earnings">
       <contract-data label="ETH Dividends " :value="yourEarnings" :img="ethIcon"/>
@@ -60,8 +65,6 @@
   import VueCharts from 'vue-chartjs'
   import ColorPicker from 'vue-color-picker-wheel'
 
-  console.log("Sketttttch")
-  //console.log(Sketch)
   export default {
     name: 'exchange',
     created(){
@@ -75,11 +78,11 @@
       clockIcon:require('@/assets/clock.png'),
       estimateBonds(){this.$store.dispatch("estimateBonds")},
       estimateReturns(){this.$store.dispatch("estimateReturns")},
-      buyColor:{ r: 255, g: 0, b: 0 }
+      buyColor:"#000000"
     }},
     methods: {
       onColorChange(color) {
-        console.log('Color has changed to: ', color);
+        this.buyColor = color
       },
       openColorBox(){
         this.$modal.show("color-box")
@@ -110,7 +113,10 @@
         "estimatedEth",
         "estimatedResolves",
         "avgHodlRelease",
-        "yourHodl"
+        "yourHodl",
+        "bondColor",
+        "resolveColor",
+        "mode"
       ])
     }
   }
@@ -129,6 +135,36 @@
 #wallet-grid{
   display: grid;
   grid-template-columns: auto auto; 
+}
+#buy-box{
+  position: relative;
+}
+#bond-color-picker{
+  width: 32px;
+  height: 24px;
+  display: block;
+  left:110px;
+  transform: translate(0px,-36px);
+  position: absolute;
+}
+#color-box .color-modal{
+  width:320px;
+  height:240px;
+  padding: 20px;
+}
+.color-indicator{
+  padding-left: 3px;
+  border-style:solid;
+  border-width:1px;
+  height:28px;
+  line-height: 28px;
+  max-width:100px;
+}
+.gap{padding: 3px;}
+.color-indicator img{
+  width:24px;
+  display: inline;
+  margin-right: 3px;
 }
 h4,h5,h6{
   margin:0;

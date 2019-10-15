@@ -1,6 +1,8 @@
 let state = {
+  mode:"color",
   rpcActive:false,
   currentAddress: null,
+  proxyAddress: null,
   tokenAddress: '',
   walletUnlocked: false,
   ethToSpend:0,
@@ -26,6 +28,9 @@ let state = {
   estimatedResolves:'0',
   avgHodlRelease:'0',
   yourHodl:'0',
-  collectiveCurrentHodl:'0'
+  collectiveCurrentHodl:'0',
+  bondColor:"#ff88ff",
+  resolveColor:"#88ffff",
+  pyramidGateway:"0x000"
 }
 export default state

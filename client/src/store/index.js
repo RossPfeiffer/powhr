@@ -6,13 +6,15 @@ import _powhrInterface from './powhrInterface'
 import powhrAddress from './powhrAddress'
 import _tokenInterface from './tokenInterface'
 import tokenAddress from './tokenAddress'
+import _colorInterface from './colorInterface'
+import colorAddress from './colorAddress'
 import Web3 from 'web3'
 import hodlConvert from 'convert-seconds';
 
 
 var web3, BN;
 
-var powhrAPI, tokenAPI, resolveContract, tokenContract
+var powhrAPI, tokenAPI, resolveContract, tokenContract, colorAPI, colorContract, relativeAddress
 
 var Big = require('big.js')
 var asdf = 0;
@@ -37,11 +39,13 @@ export const store = new Vuex.Store({
         state.currentAddress = "0x0000000000000000000000000000000000000000"
         console.log("wallet is locked. no access")
       }
-      state.rpcActive = true;
       resolveContract = _powhrInterface.init(web3)
+      colorContract = _colorInterface.init(web3)
       tokenContract = _tokenInterface.init(web3)
       powhrAPI = resolveContract.methods
       tokenAPI = tokenContract.methods
+      colorAPI = colorContract.methods
+
       window._events = resolveContract;
       _events.getPastEvents("allEvents",{fromBlock:5742328}).then(function(r){console.log(r)})
     },
@@ -72,16 +76,18 @@ export const store = new Vuex.Store({
       state.estimatedEth = data.eth
       state.estimatedResolves = data.resolves
     },
-
     update_developerAddress(state,value){state.developerAddress = value},
     update_ethToDonate(state,value){state.ethToDonate = value},
     update_yourEth4Launch(state,value){state.yourEth4Launch = value},
     update_totalEth4Launch(state,value){state.totalEth4Launch = value},
     update_totalEthDonated(state,value){state.totalEthDonated = value},
     update_contractToPropose(state,value){state.contractToPropose = value},
+    update_bondColor(state,value){state.bondColor = value},
+    update_resolveColor(state,value){state.resolveColor = value},
+    rpcActivate(state){state.rpcActive = true},
   },
   actions: {
-    connectToMetaMask: async ({commit, dispatch}) => {
+    connectToMetaMask: async ({commit, dispatch,state}) => {
         let metamask = false
         let provider
 
@@ -97,6 +103,12 @@ export const store = new Vuex.Store({
               if(web3.eth.givenProvider.selectedAddress){
                 clearInterval(addressChecker)
                 commit('walletLockToggle', metamask)
+                console.log("dispatch for proxy address")
+                if(state.mode=="color"){
+                  dispatch("getProxyAddress")
+                }else{
+                  commit('rpcActivate')
+                } 
               }
             },500)
           })
@@ -120,21 +132,41 @@ export const store = new Vuex.Store({
           }
           console.log("...init",metamask)
           commit('walletLockToggle', metamask)
+          console.log("dispatch for proxy address")
+          if(state.mode=="color"){
+            dispatch("getProxyAddress")
+          }else{
+            commit('rpcActivate')
+          }
         }
-
+    },
+    getProxyAddress: ({commit, dispatch, state})=>{
+      colorAPI.proxyAddress(state.currentAddress).call().then( (proxyAddress)=>{
+        console.log("Proxy Address")
+        console.log(proxyAddress)
+        relativeAddress = proxyAddress;
+        commit('rpcActivate')
+      })
     },
     updateCycle: async({commit,dispatch,state})=>{
       setInterval(function(){
         if(state.rpcActive) { /**/
           
-          powhrAPI.totalSupply().call().then( (r)=>{
-            let bigR = Big(r.toString())
-            bigR = bigR.div(1e12)
-            let bonds = bigR.toFixed(2)
-            commit("update_totalBondSupply", bonds)
-          }).catch( err )
-
-          
+          if(state.mode="color"){
+            powhrAPI.totalSupply().call().then( (r)=>{
+              let bigR = Big(r.toString())
+              bigR = bigR.div(1e12)
+              let bonds = bigR.toFixed(2)
+              commit("update_totalBondSupply", bonds)
+            }).catch( err )   
+          }else{
+            colorAPI._totalBonds().call().then( (r)=>{
+              let bigR = Big(r.toString())
+              bigR = bigR.div(1e12)
+              let bonds = bigR.toFixed(2)
+              commit("update_totalBondSupply", bonds)
+            }).catch( err )
+          }
           /*powhrAPI.poolFunds().call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e18)
@@ -211,8 +243,6 @@ export const store = new Vuex.Store({
             let bonds = bigR.toFixed(2)
             commit("update_yourBonds", bonds )
             powhrAPI.getEtherForBonds( r ).call().then( (rr)=>{
-              //commit("update_yourBondValue",eth.convertWeiToEth( eth.int(rr) 
-              //commit("update_yourBondValue",eth.convertWeiToEth( 0 )
               commit("update_yourBondValue",eth.convertWeiToEth( eth.int( rr*(1-asdf/100) ) )                
               .toFixed(5).toString())
             })
@@ -226,22 +256,48 @@ export const store = new Vuex.Store({
           })
         }
       },1000)
-    },
-    buyBonds: ({commit, dispatch, state})=>{  
+    },/*
+      
+      if(state.mode === "color"){
+        colorAPI.proxyAddress(state.currentAddress).call().then( (addr)=>{
+          state.rpcActive = true
+          relativeAddress = addr
+        })
+      }else{
+        relativeAddress = state.currentAddress
+        state.rpcActive = true
+      }*/
+    buyBonds: ({commit, dispatch, state})=>{
+      let address, API;
+      if(state.mode=="color"){
+        API = colorAPI.buy()
+        address = colorAddress
+      }else{
+        API = powhrAPI.fund()
+        address = powhrAddress
+      }
       web3.eth.sendTransaction({
         from: state.currentAddress,
         to: powhrAddress,
         value: weiForm(state.ethToSpend),
-        data: powhrAPI.fund().encodeABI()
+        data: API.encodeABI()
       },(e,hash)=>{
         err(e)
       });
     },
     sellBonds: ({commit, dispatch, state})=>{
+      let address, API;
+      if(state.mode=="color"){
+        API = colorAPI.sell( weiForm( parseFloat(state.bondsToSell)/1e6+"" ) )
+        address = colorAddress
+      }else{
+        API = powhrAPI.sellBonds( weiForm( parseFloat(state.bondsToSell)/1e6+"" ) )
+        address = powhrAddress
+      }
       web3.eth.sendTransaction({
         from: state.currentAddress,
-        to: powhrAddress,
-        data: powhrAPI.sellBonds( weiForm( parseFloat(state.bondsToSell)/1e6+"" ) ).encodeABI()
+        to: address,
+        data: API.encodeABI()
       },(e,hash)=>{
         err(e)
       });/*
@@ -255,6 +311,8 @@ export const store = new Vuex.Store({
       let number = parseFloat(state.ethToSpend)
       console.log("The User Input:")
       console.log(number)
+      
+
       if (Number.isNaN(number)) number = 0
       if (number > 0){
         let x = parseFloat(state.ethToSpend) * ( 1 - asdf/100 ) +''
@@ -263,6 +321,9 @@ export const store = new Vuex.Store({
           console.log(r)
           let bigR = Big( r.toString() )
           bigR = bigR.div(1e18/1e6)
+          if(state.mode=="color"){
+            bigR = bigR.mul(0.9)
+          }
           let bonds = bigR.toFixed(2)
           commit("update_estimatedBonds", bonds)
         })
@@ -289,18 +350,23 @@ export const store = new Vuex.Store({
       }
     },
     stakeResolves: async({commit, dispatch, state})=>{
+      let address, API;
+      if(state.mode=="color"){
+        API = colorAPI.stake( weiForm(state.resolvesToStake) )
+        address = colorAddress
+      }else{
+        API = tokenAPI.transfer(powhrAddress, weiForm(state.resolvesToStake) )
+        address = tokenAddress
+      }
       web3.eth.sendTransaction({
         from: state.currentAddress,
-        to: tokenAddress,
-        data: tokenAPI.transfer(powhrAddress, weiForm(state.resolvesToStake) ).encodeABI()
+        to: address,
+        data: API.encodeABI()
       },(e,hash)=>{
         err(e)
       });
     },
     pullResolves: async({commit, dispatch, state})=>{
-      /*let resolvesToPull = new Big( state.resolvesToPull )
-      let amount = resolvesToPull.times(1e18)
-      await powhrAPI.pullResolves( amount, function(){console.log("Clear Inputs and estimates")})*/
       web3.eth.sendTransaction({
         from: state.currentAddress,
         to: powhrAddress,
@@ -310,25 +376,35 @@ export const store = new Vuex.Store({
       });
     },
     withdrawEarnings: async({commit, dispatch, state})=>{
-      /*let earningsToPull = new Big( state.earningsToPull )
-      let amount = earningsToPull.times(1e18)
-      await powhrAPI.withdraw( amount, function(){console.log("Clear Inputs and estimates")})*/
+      let address, API;
+      if(state.mode=="color"){
+        API = colorAPI.withdraw()
+        address = colorAddress
+      }else{
+        API = powhrAPI.withdraw( weiForm(state.earningsToPull) )
+        address = powhrAddress
+      }
       web3.eth.sendTransaction({
         from: state.currentAddress,
-        to: powhrAddress,
-        data: powhrAPI.withdraw( weiForm(state.earningsToPull) ).encodeABI()
+        to: address,
+        data: API.encodeABI()
       },(e,hash)=>{
         err(e)
       });
     },
     reinvestEarnings: async({commit, dispatch, state})=>{
-      /*let earningsToReinvest = new Big( state.earningsToReinvest )
-      let amount = earningsToReinvest.times(1e18)
-      await powhrAPI.reinvestEarnings( amount, function(){console.log("Clear Inputs and estimates")})*/
+      let address, API;
+      if(state.mode=="color"){
+        API = colorAPI.reinvest()
+        address = colorAddress
+      }else{
+        API = powhrAPI.reinvestEarnings( weiForm(state.earningsToReinvest) )
+        address = powhrAddress
+      }
       web3.eth.sendTransaction({
         from: state.currentAddress,
-        to: powhrAddress,
-        data: powhrAPI.reinvestEarnings( weiForm(state.earningsToReinvest) ).encodeABI()
+        to: address,
+        data: API.encodeABI()
       },(e,hash)=>{
         err(e)
       });

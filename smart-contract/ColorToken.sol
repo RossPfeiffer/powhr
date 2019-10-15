@@ -1,4 +1,4 @@
-pragma solidity ^ 0.5.1;
+pragma solidity ^ 0.5.11;
 contract ColorToken{
 	BondContract public bondContract;
 	ResolveContract public resolveContract;
@@ -10,6 +10,7 @@ contract ColorToken{
     string public symbol = "RGB";
     uint8 constant public decimals = 18;
 	uint _totalSupply;
+	uint _totalBonds;
 	uint masternodeFee = 10; // 10%
 
 	mapping(address => PyramidProxy) proxy;
@@ -28,12 +29,11 @@ contract ColorToken{
 	mapping(address => address) gateway;
 	mapping(address => uint256) public pocket;
 	mapping(address => uint256) public upline;
-	mapping(address => address) public minecart;
 
 	mapping(address => address) public votingFor;
 	mapping(address => uint256) public votesFor;
 	
-	constructor(address _bondContract) public{	
+	constructor(address _bondContract) public{
 		bondContract = BondContract(_bondContract);
 		resolveContract = ResolveContract( bondContract.getResolveContract() );
 		communityResolve = msg.sender;
@@ -63,22 +63,24 @@ contract ColorToken{
 	function buy(uint _red, uint _green, uint _blue) payable public {
 		buy( msg.value, _red, _green, _blue, true);
 	}
-	function buy(uint ETH, uint _red, uint _green, uint _blue, bool EMIT) payable public returns(uint bondsCreated){
+	function buy(uint ETH, uint _red, uint _green, uint _blue, bool EMIT) internal returns(uint bondsCreated){
   		address sender = msg.sender;
 		ensureProxy(sender);
 		_red = max1(_red);
 		_green = max1(_green);
 		_blue = max1(_blue);
-		uint fee = ETH / masternodeFee;
-		uint eth4Bonds = ETH - fee;
+		uint fee = _.O(ETH , masternodeFee);
+		uint eth4Bonds = _.M(ETH , fee);
 
 		address payable proxyAddr = proxyAddress(sender); 
 		proxyAddr.transfer(eth4Bonds);
 		uint createdBonds = proxy[sender].buy();
+		_totalBonds = _.A(_totalBonds, createdBonds);
 		bondsAddColor(sender,createdBonds, _red, _green, _blue);
 		
-		pocket[ gateway[sender] ] += fee/2;
-		upline[ gateway[sender] ] += fee/2;
+		pocket[ gateway[sender] ] = _.A(pocket[ gateway[sender] ],_.O(fee,2));
+		upline[ gateway[sender] ] = _.A(pocket[ gateway[sender] ],_.O(fee,2));
+
 		pushMinecart();
 
 		if( EMIT ){
@@ -86,33 +88,41 @@ contract ColorToken{
 		}
 
 		if( bondBalance(sender) > 10000*1e12 ){
-			lastGateway = sender;	
+			lastGateway = sender;
 		}
 		return createdBonds;
   	}
 
-  	function pushMinecart() internal{
+  	function pushMinecart() public{
   		pushMinecart(msg.sender);
   	}
 
-  	function pushMinecart(address addr) internal{
+  	function pushMinecart(address addr) public{
   		if(gateway[addr] == 0x0000000000000000000000000000000000000000 || bondBalance( gateway[addr] ) < 10000*1e12){
 			gateway[addr] = lastGateway;
 		}
-  		if( minecart[addr] == THIS || minecart[addr] == 0x0000000000000000000000000000000000000000){
+  		/*if( minecart[addr] == THIS || minecart[addr] == 0x0000000000000000000000000000000000000000){
 			minecart[addr] = addr;
 		}else{
 			minecart[addr] = gateway[ minecart[addr] ];	
-		}
-		address dropOff = minecart[addr];
-		pocket[ dropOff ] += upline[ dropOff ] / 2;
-		upline[ gateway[dropOff] ] += upline[ dropOff ] / 2;
-		upline[ dropOff ] = 0;
+		}*/
+		uint gold = upline[ addr ];
+		upline[ addr ] = 0;
+		pocket[ gateway[addr] ] = _.A(pocket[ gateway[addr] ],_.O(gold,2));
+		uint goingUp = _.A(pocket[ gateway[addr] ],_.O(gold,2));
+		uint toCommunityResolve = _.O(goingUp,5);
+		goingUp = goingUp - toCommunityResolve;
+		upline[ gateway[addr] ] = _.A(upline[ gateway[addr] ], goingUp );
+		pocket[communityResolve] = _.A(pocket[communityResolve], toCommunityResolve) ;
+		/*address dropOff = minecart[addr];
+		pocket[ dropOff ] = _.A(pocket[ dropOff ], _.O(upline[ dropOff ] , 2));
+		upline[ gateway[dropOff] ] = _.A( upline[ gateway[dropOff] ] ,_.O(upline[ dropOff ] , 2));
+		upline[ dropOff ] = 0;*/
   	}
 
   	event Sell( address indexed addr, uint256 bondsSold, uint256 resolves, uint red, uint green, uint blue);
   	function sell(uint amountToSell) public{
-  		address sender = sender;
+  		address sender = msg.sender;
   		uint bondsBefore = bondBalance(sender);
   		(uint _red, uint _green, uint _blue) = RGB_ratio();
   		uint mintedResolves = proxy[sender].sell(amountToSell);
@@ -121,46 +131,42 @@ contract ColorToken{
   		uint _green = greenBonds[sender] / bondsBefore;
   		uint _blue = blueBonds[sender] / bondsBefore;*/
 		resolvesAddColor(sender, mintedResolves, _red, _green, _blue);
-  		votesFor[ votingFor[sender] ] += mintedResolves;
-		_totalSupply += mintedResolves;
+  		votesFor[ votingFor[sender] ] = _.A( votesFor[ votingFor[sender] ], mintedResolves );
+		_totalSupply = _.A( _totalSupply, mintedResolves);
+
+		_totalBonds = _.M(_totalBonds, amountToSell);
 		emit Sell(sender, amountToSell, mintedResolves, _red, _green, _blue );
 
-  		bondsThinColor(msg.sender, bondsBefore - amountToSell, bondsBefore);
+  		bondsThinColor(msg.sender, _.M(bondsBefore , amountToSell), bondsBefore);
   		pushMinecart();
   	}
   	function stake(uint amountToStake) public{
   		address sender = msg.sender;
 		proxy[sender].stake( amountToStake );
 		colorShift(sender, address(bondContract), amountToStake );
-		pushMinecart();
   	}
-  	function unstake(uint amountToUnstake) public{
+  	/*function unstake(uint amountToUnstake) public{
   		address sender = msg.sender;
 		proxy[sender].unstake( amountToUnstake );
 		colorShift(address(bondContract), sender, amountToUnstake );
 		pushMinecart();
-  	}
+  	}*/
   	function reinvest() public{
   		address sender = msg.sender;
-  		//address proxyAddr = proxyAddress( sender );
-  		//uint bal = bondContract.balanceOf( proxyAddr );
-  		/*uint red = redBonds[sender] / bal;
-		uint green = greenBonds[sender] / bal;
-		uint blue = blueBonds[sender] / bal;*/
 		(uint red, uint green, uint blue) = RGB_ratio();
 
   		uint createdBonds;
   		uint dissolvedResolves;
 		(createdBonds, dissolvedResolves) = proxy[sender].reinvest();
 		
-		createdBonds += buy( pocket[sender], red, green, blue, false);
+		createdBonds = _.A( createdBonds , buy( pocket[sender], red, green, blue, false) );
 		pocket[sender] = 0;
 
 		bondsAddColor(sender, createdBonds, red, green, blue);
 		// update core contract's Resolve color
 		address pyrAddr = address(bondContract);
 		uint currentResolves = resolveContract.balanceOf( pyrAddr );
-		resolvesThinColor(pyrAddr, currentResolves, currentResolves + dissolvedResolves);
+		resolvesThinColor(pyrAddr, currentResolves, _.A(currentResolves , dissolvedResolves) );
 		pushMinecart();
   	}
   	function withdraw() public{
@@ -172,7 +178,7 @@ contract ColorToken{
   		// update core contract's Resolve color
 		address pyrAddr = address(bondContract);
 		uint currentResolves = resolveContract.balanceOf( pyrAddr );
-		resolvesThinColor(pyrAddr, currentResolves, currentResolves + dissolvedResolves);
+		resolvesThinColor(pyrAddr, currentResolves, _.A( currentResolves , dissolvedResolves) );
 		pushMinecart();
   	}
 
@@ -185,7 +191,7 @@ contract ColorToken{
 	function unbindResolves(uint amount) public {
   		address sender = msg.sender;
 		uint totalResolves = resolveContract.balanceOf( proxyAddress(sender) );
-		resolvesThinColor( sender, totalResolves - amount, totalResolves);
+		resolvesThinColor( sender, _.M(totalResolves , amount), totalResolves);
 		proxy[sender].transfer(sender, amount);
 	}
 	function setVotingFor(address candidate) public {
@@ -193,9 +199,9 @@ contract ColorToken{
 		//Contracts can't vote for anyone. Because then people would just evenly split the pool fund most of the time
 		require( !isContract(sender) );//This could be enhanced, but this is a barebones demonstration of the powhr of resolve tokens
 		uint voteWeight = balanceOf(sender);
-		votesFor[ votingFor[ sender ] ] -= voteWeight;
+		votesFor[ votingFor[ sender ] ] =  _.M( votesFor[ votingFor[ sender ] ], voteWeight);
 		votingFor[ sender ] = candidate;
-		votesFor[ candidate ] += voteWeight;
+		votesFor[ candidate ] = _.A(votesFor[ candidate ] ,voteWeight);
 	}
 	function assertNewCommunityResolve(address candidate) public {
 		if( votesFor[candidate] > votesFor[communityResolve] ){
@@ -209,16 +215,6 @@ contract ColorToken{
 			pocket[ THIS ] = 0;
 			msg.sender.transfer(money_gotten);
 			pushMinecart();
-		}
-	}
-
-	// Function that is called when a user or another contract wants to transfer funds .
-	function transfer(address _to, uint _value, bytes memory _data) public returns (bool success) {
-		if( balanceOf(msg.sender) < _value ) revert();
-		if( isContract(_to) ){
-			return transferToContract(_to, _value, _data);
-		}else{
-			return transferToAddress(_to, _value, _data);
 		}
 	}
 
@@ -268,13 +264,13 @@ contract ColorToken{
 		colorShift(_from, _to, _amount);
 		ensureProxy(_to);
 		
-		votesFor[ votingFor[_from] ] -= _amount;
-		votesFor[ votingFor[_to] ] += _amount;
+		votesFor[ votingFor[_from] ] = _.M(votesFor[ votingFor[_from] ], _amount);
+		votesFor[ votingFor[_to] ] = _.A( votesFor[ votingFor[_to] ] ,_amount);
 
 		proxy[_from].transfer( proxyAddress(_to), _amount );
 	}
 	function RGB_scale(uint r, uint g, uint b, uint numerator, uint denominator) internal pure returns(uint,uint,uint){
-		return (r * numerator / denominator, g * numerator / denominator, b * numerator / denominator );
+		return (_.O(_.M(r , numerator) , denominator), _.O(_.M(g , numerator) , denominator), _.O(_.M(b , numerator) , denominator) );
 	}
 	function colorShift(address _from, address _to, uint _amount) internal{
 		//uint bal = proxy[_from].getBalance();
@@ -282,12 +278,12 @@ contract ColorToken{
 		uint green_ratio = greenResolves[_from] * _amount / bal;
 		uint blue_ratio = blueResolves[_from] * _amount / bal;*/
 		(uint red_ratio, uint green_ratio, uint blue_ratio) = RGB_scale(redResolves[_from], greenResolves[_from], blueResolves[_from], _amount, proxy[_from].getBalance() );
-		redResolves[_from] -= red_ratio;
-		greenResolves[_from] -= green_ratio;
-		blueResolves[_from] -= blue_ratio;
-		redResolves[_to] += red_ratio;
-		greenResolves[_to] += green_ratio;
-		blueResolves[_to] += blue_ratio;
+		redResolves[_from] = _.M(redResolves[_from],red_ratio);
+		greenResolves[_from] = _.M(greenResolves[_from],green_ratio);
+		blueResolves[_from] = _.M(blueResolves[_from],blue_ratio);
+		redResolves[_to] = _.A(redResolves[_to],red_ratio);
+		greenResolves[_to] = _.A(greenResolves[_to],green_ratio);
+		blueResolves[_to] = _.A(blueResolves[_to],blue_ratio);
 	}
 
     function allowance(address src, address guy) public view returns (uint) {
@@ -299,15 +295,15 @@ contract ColorToken{
         require(approvals[src][sender] >=  wad);
         require(proxy[src].getBalance() >=  wad);
         if (src != sender) {
-            approvals[src][sender] -=  wad;
+            approvals[src][sender] =  _.M(approvals[src][sender],wad);
         }
 		moveTokens(src,dst,wad);
 
         return true;
     }
     event Approval(address indexed src, address indexed guy, uint wad);
-    	address sender = msg.sender;
     function approve(address guy, uint wad) public returns (bool) {
+    	address sender = msg.sender;
         approvals[sender][guy] = wad;
 
         emit Approval(sender, guy, wad);
@@ -316,14 +312,14 @@ contract ColorToken{
     }
 
   	function resolvesAddColor(address addr, uint amount , uint red, uint green, uint blue) internal{
-  		redResolves[addr] += red * amount;
-		greenResolves[addr] += green * amount;
-		blueResolves[addr] += blue * amount;
+  		redResolves[addr] = _.A(redResolves[addr] ,_.X(red , amount));
+		greenResolves[addr] = _.A(greenResolves[addr],_.X(green , amount));
+		blueResolves[addr] = _.A(blueResolves[addr],_.X(blue , amount));
 	}
   	function bondsAddColor(address addr, uint amount , uint red, uint green, uint blue) internal{
-  		redBonds[addr] += red * amount;
-		greenBonds[addr] += green * amount;
-		blueBonds[addr] += blue * amount;
+  		redBonds[addr] = _.A(redBonds[addr], _.X(red ,amount));
+		greenBonds[addr] = _.A(greenBonds[addr], _.X(green , amount));
+		blueBonds[addr] = _.A(blueBonds[addr], _.X(blue , amount));
   	}
   	function resolvesThinColor(address addr, uint newWeight, uint oldWeight) internal{
 		(redResolves[addr], greenResolves[addr], blueResolves[addr]) = RGB_scale(redResolves[addr], greenResolves[addr], blueResolves[addr], newWeight, oldWeight);
@@ -343,7 +339,8 @@ contract ColorToken{
   	}
   	function RGB_ratio(address addr) public view returns(uint,uint,uint){
   		uint bonds = bondBalance(addr);
-  		return (redBonds[sender]/bonds, greenBonds[sender]/bonds, blueBonds[sender]/bonds);
+  		address sender = msg.sender;
+  		return ( _.O(redBonds[sender],bonds), _.O(greenBonds[sender],bonds), _.O(blueBonds[sender],bonds));
   	}
 	function () payable external {
 		if (msg.value > 0) {
@@ -362,16 +359,16 @@ contract ColorToken{
 	function bondBalance(address addr) public view returns(uint){
 		return bondContract.balanceOf( proxyAddress(addr) );
 	}
-	event BondTransfer(address from, address to, uint amount, uint red, uint green, uint blue);
+	/*event BondTransfer(address from, address to, uint amount, uint red, uint green, uint blue);
 	function bondTransfer(address to, uint amount) public{
 		address sender = msg.sender;
 		uint sendersFormerTotalBonds = bondBalance(sender);
-		bondsThinColor( sender, sendersFormerTotalBonds - amount, sendersFormerTotalBonds);
+		bondsThinColor( sender, _.M( sendersFormerTotalBonds , amount ) , sendersFormerTotalBonds);
 		(uint r, uint g, uint b) = RGB_ratio(sender);
 		bondsAddColor( to, amount, r, g, b );
 		proxy[sender].bondTransfer( proxyAddress(to) , amount);
 		emit BondTransfer(sender, to, amount, r, g, b);
-	}
+	}*/
 }
 
 
@@ -379,11 +376,12 @@ contract BondContract{
 	function balanceOf(address _owner) public view returns (uint256 balance);
 	function sellBonds(uint amount) public returns(uint,uint);
 	function getResolveContract() public view returns(address);
-	function pullResolves(uint amount) public;
+	//function pullResolves(uint amount) public;
 	function reinvestEarnings(uint amountFromEarnings) public returns(uint,uint);
 	function withdraw(uint amount) public returns(uint);
 	function fund() payable public returns(uint);
 	function resolveEarnings(address _owner) public view returns (uint256 amount);
+	//function bondTransfer( address to, uint amount ) public;
 }
 
 contract ResolveContract{
@@ -409,7 +407,7 @@ contract PyramidProxy{
 		_;
     }
 	function () payable external routerOnly(){
-		ETH += msg.value;
+		ETH = _.A(ETH, msg.value);
 	}
 
 	function buy() public routerOnly() returns(uint){
@@ -455,14 +453,61 @@ contract PyramidProxy{
 	function transfer(address addr, uint amount) public routerOnly(){
 		resolveContract.transfer( addr, amount );
 	}
-	function bondTransfer(address to, uint amount) public routerOnly(){
+	/*function bondTransfer(address to, uint amount) public routerOnly(){
 		bondContract.bondTransfer( to, amount );
 	}
 	function unstake(uint amount) public routerOnly(){
 		bondContract.pullResolves( amount );
-	}
+	}*/
 }
 
 contract ERC223ReceivingContract{
     function tokenFallback(address _from, uint _value, bytes calldata _data) external;
+}
+
+
+/**
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
+ */
+library _ {
+
+    /**
+    * @dev Multiplies two numbers, throws on overflow.
+    */
+    function X(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+        uint256 c = a * b;
+        assert(c / a == b);
+        return c;
+    }
+
+    /**
+    * @dev Integer division of two numbers, truncating the quotient.
+    */
+    function O(uint256 a, uint256 b) internal pure returns (uint256) {
+        // assert(b > 0); // Solidity automatically throws when dividing by 0
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+        return c;
+    }
+
+    /**
+    * @dev Substracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+    */
+    function M(uint256 a, uint256 b) internal pure returns (uint256) {
+        assert(b <= a);
+        return a - b;
+    }
+
+    /**
+    * @dev Adds two numbers, throws on overflow.
+    */
+    function A(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        assert(c >= a);
+        return c;
+    }
 }

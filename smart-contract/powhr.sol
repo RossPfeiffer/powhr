@@ -1,4 +1,4 @@
-pragma solidity ^ 0.5.1;
+pragma solidity ^ 0.5.11;
 contract PoWHr{
 	// scaleFactor is used to convert Ether into bonds and vice-versa: they're of different
 	// orders of magnitude, hence the need to bridge between the two.
@@ -92,7 +92,7 @@ contract PoWHr{
 		uint oldWeight = resolveWeight[sender];
 		resolveWeight[msg.sender] = _.O( _.X(oldWeight , _.M(totalEarnings, amountFromEarnings) ), totalEarnings);
 		uint weightDiff = _.M(oldWeight , resolveWeight[sender] );
-		dissolved = _.P(dissolved, weightDiff);
+		dissolved = _.A(dissolved, weightDiff);
 		dissolvingResolves = _.M(dissolvingResolves, weightDiff);
 
 		// For maintaing payout invariance
@@ -114,12 +114,12 @@ contract PoWHr{
 
 		// The amount of Ether used to purchase new bonds for the caller
 		uint numEther = _.M(value_ , fee);
-		buySum = _.P(buySum, numEther);
+		buySum = _.A(buySum, numEther);
 
 		//resolve reward tracking stuff
 		uint currentTime = NOW();
-		avgFactor_ethSpent[sender] = _.P(avgFactor_ethSpent[sender], numEther);
-		avgFactor_buyInTimeSum[sender] = _.P(avgFactor_buyInTimeSum[sender], _.X( currentTime , _.X(scaleFactor, numEther) ) );
+		avgFactor_ethSpent[sender] = _.A(avgFactor_ethSpent[sender], numEther);
+		avgFactor_buyInTimeSum[sender] = _.A(avgFactor_buyInTimeSum[sender], _.X( currentTime , _.X(scaleFactor, numEther) ) );
 
 		// The number of bonds which can be purchased for numEther.
 		uint createdBonds = calculateBondsFromReinvest(numEther, amountFromEarnings);
@@ -136,14 +136,14 @@ contract PoWHr{
 			uint rewardPerResolve = _.O(resolveFee, dissolvingResolves);
 
 			// The Ether value per token is increased proportionally.
-			earningsPerResolve = _.P(earningsPerResolve, rewardPerResolve);
+			earningsPerResolve = _.A(earningsPerResolve, rewardPerResolve);
 		}
 
 		// Add the createdBonds to the total supply.
-		_totalSupply = _.P(_totalSupply, createdBonds);
+		_totalSupply = _.A(_totalSupply, createdBonds);
 
 		// Assign the bonds to the balance of the buyer.
-		hodlBonds[sender] = _.P(hodlBonds[sender], createdBonds);
+		hodlBonds[sender] = _.A(hodlBonds[sender], createdBonds);
 
 		emit Reinvest(sender, numEther, weightDiff, createdBonds, fee);
 		return (createdBonds, weightDiff);
@@ -172,7 +172,7 @@ contract PoWHr{
 	function fund() payable public returns(uint){
 		uint bought;
 		if (msg.value > 0.000001 ether) {
-		  	contractBalance = _.P(contractBalance, msg.value);
+		  	contractBalance = _.A(contractBalance, msg.value);
 			bought = buy();
 		} else {
 			revert();
@@ -187,20 +187,12 @@ contract PoWHr{
         sell_eth = _.M( sell_eth, fluxFee(sell_eth) );
         return ( buy_eth, sell_eth, fluxFee(scale) );
     }
-/*
-if(upDown){
-			uint x = fixedExp((fixedLog(_totalSupply + bonds) - price_coeff) * crr_d/crr_n);
-			return x - reserveAmount;
-		}else{
-			uint x = fixedExp((fixedLog(_totalSupply - bonds) - price_coeff) * crr_d/crr_n);
-			return reserveAmount - x;
-		}*/
     // For calculating the price 
 	function getPriceForBonds(uint256 bonds, bool upDown) public view returns (uint256 price) {
 		uint reserveAmount = reserve();
 
 		if(upDown){
-			uint x = fixedExp( (fixedLog( _.P(_totalSupply , bonds) ) - price_coeff) * crr_d/crr_n);
+			uint x = fixedExp( (fixedLog( _.A(_totalSupply , bonds) ) - price_coeff) * crr_d/crr_n);
 			return _.M( x, reserveAmount);
 		}else{
 			uint x = fixedExp((fixedLog(_.M(_totalSupply , bonds)) - price_coeff) * crr_d/crr_n);
@@ -233,21 +225,21 @@ if(upDown){
 
 		// The amount of Ether used to purchase new bonds for the caller.
 		uint numEther = _.M( value , fee);
-		buySum = _.P(buySum, numEther);
+		buySum = _.A(buySum, numEther);
 
 		//resolve reward tracking stuff
 		uint currentTime = NOW();
-		avgFactor_ethSpent[sender] = _.P(avgFactor_ethSpent[sender], numEther);
-		avgFactor_buyInTimeSum[sender] = _.P(avgFactor_buyInTimeSum[sender], _.X(_.X(currentTime , scaleFactor),  numEther) );
+		avgFactor_ethSpent[sender] = _.A(avgFactor_ethSpent[sender], numEther);
+		avgFactor_buyInTimeSum[sender] = _.A(avgFactor_buyInTimeSum[sender], _.X(_.X(currentTime , scaleFactor),  numEther) );
 
 		// The number of bonds which can be purchased for numEther.
 		uint createdBonds = getBondsForEther(numEther);
 
 		// Add the createdBonds to the total supply.
-		_totalSupply = _.P(_totalSupply, createdBonds);
+		_totalSupply = _.A(_totalSupply, createdBonds);
 
 		// Assign the bonds to the balance of the buyer.
-		hodlBonds[sender] = _.P(hodlBonds[sender], createdBonds);
+		hodlBonds[sender] = _.A(hodlBonds[sender], createdBonds);
 
 		// Check if we have bonds in existence
 		uint resolveFee;
@@ -259,7 +251,7 @@ if(upDown){
 			uint rewardPerResolve = _.O(resolveFee , dissolvingResolves);
 
 			// The Ether value per resolve is increased proportionally.
-			earningsPerResolve = _.P(earningsPerResolve, rewardPerResolve);
+			earningsPerResolve = _.A(earningsPerResolve, rewardPerResolve);
 		}
 		emit Buy( sender, numEther, createdBonds, fee);
 		return createdBonds;
@@ -277,8 +269,8 @@ if(upDown){
 		// and the multiplier you get for hodling needs to be relative to the average hodl
 		uint buyInTime = _.O( avgFactor_buyInTimeSum[addr] , avgFactor_ethSpent[addr]);
 		uint cashoutTime = _.M( _.X( NOW(), scaleFactor) , buyInTime);
-		uint releaseTimeSum = _.P(avgFactor_releaseTimeSum , _.X(_.O(_.X(cashoutTime,input_ETH),scaleFactor),buyInTime));
-		uint releaseWeight = _.P(avgFactor_releaseWeight , _.O(_.X(input_ETH,buyInTime),scaleFactor));
+		uint releaseTimeSum = _.A(avgFactor_releaseTimeSum , _.X(_.O(_.X(cashoutTime,input_ETH),scaleFactor),buyInTime));
+		uint releaseWeight = _.A(avgFactor_releaseWeight , _.O(_.X(input_ETH,buyInTime),scaleFactor));
 		uint avgCashoutTime = _.O(releaseTimeSum,releaseWeight);
 		return (output_ETH, _.O(_.X(_.O(_.X(input_ETH, cashoutTime) , avgCashoutTime) , input_ETH) , output_ETH), releaseTimeSum, releaseWeight, input_ETH);
 	}
@@ -312,7 +304,7 @@ if(upDown){
 	    uint numEthers = _.M( numEthersBeforeFee, fee);
 
 	    //updating the numerator of the fee-easing factor
-	    sellSum = _.P(sellSum,initialInput_ETH);
+	    sellSum = _.A(sellSum,initialInput_ETH);
 
 		// Burn the bonds which were just sold from the total supply.
 		_totalSupply = _.M(_totalSupply,amount);
@@ -332,7 +324,7 @@ if(upDown){
 			uint rewardPerResolve = _.O(resolveFee , dissolvingResolves);
 
 			// The Ether value per resolve is increased proportionally.
-			earningsPerResolve = _.P(earningsPerResolve, rewardPerResolve);
+			earningsPerResolve = _.A(earningsPerResolve, rewardPerResolve);
 		}
 		
 		// Send the ethereum to the address that requested the sell.
@@ -351,13 +343,13 @@ if(upDown){
 	// Calculates the number of bonds that can be bought for a given amount of Ether, according to the
 	// dynamic reserve and _totalSupply values (derived from the buy and sell prices).
 	function getBondsForEther(uint256 ethervalue) public view returns (uint256 bonds) {
-		uint new_totalSupply = fixedExp( fixedLog( _.P(reserve(), ethervalue) ) * crr_n/crr_d + price_coeff);
+		uint new_totalSupply = fixedExp( fixedLog( _.A(reserve(), ethervalue) ) * crr_n/crr_d + price_coeff);
 		return _.M(new_totalSupply , _totalSupply);
 	}
 
 	// Semantically similar to getBondsForEther, but subtracts the callers balance from the amount of Ether returned for conversion.
 	function calculateBondsFromReinvest(uint256 ethervalue, uint256 subvalue) public view returns (uint256 bondTokens) {
-		return _.M(fixedExp(fixedLog( _.P(_.M(reserve() , subvalue), ethervalue) )*crr_n/crr_d + price_coeff) , _totalSupply);
+		return _.M(fixedExp(fixedLog( _.A(_.M(reserve() , subvalue), ethervalue) )*crr_n/crr_d + price_coeff) , _totalSupply);
 	}
 
 	// Converts a number bonds into an Ether value.
@@ -374,10 +366,8 @@ if(upDown){
 		// at https://test.jochen-hoenicke.de/eth/ponzitoken/ in the third equation, with the CRR numerator
 		// and denominator altered to 1 and 2 respectively.
 		uint x = fixedExp((fixedLog( _.M(_totalSupply , bondTokens) ) - price_coeff) * crr_d/crr_n);
-		if (x > reserveAmount)
-			return 0;
 
-		return reserveAmount - x;
+		return _.M(reserveAmount , x);
 	}
 
 	// You don't care about these, but if you really do they're hex values for
@@ -451,8 +441,8 @@ if(upDown){
 	event StakeResolves( address indexed addr, uint256 amountStaked, bytes _data );
 	function tokenFallback(address from, uint value, bytes calldata _data) external{
 		if(msg.sender == address(resolveToken) ){
-			resolveWeight[from] = _.P(resolveWeight[from],value);
-			dissolvingResolves = _.P(dissolvingResolves,value);
+			resolveWeight[from] = _.A(resolveWeight[from],value);
+			dissolvingResolves = _.A(dissolvingResolves,value);
 
 			// Update the payout array so that the "resolve shareholder" cannot claim resolveEarnings on previous staked resolves.
 			int payoutDiff  = (int256) ( _.X(earningsPerResolve, value) );
@@ -480,7 +470,7 @@ if(upDown){
 		uint oldWeight = resolveWeight[sender];
 		resolveWeight[sender] = _.O(_.X( oldWeight , _.M(totalEarnings , amount) ) , totalEarnings);
 		uint weightDiff = _.M( oldWeight , resolveWeight[sender] );
-		dissolved = _.P(dissolved,weightDiff);
+		dissolved = _.A(dissolved,weightDiff);
 		dissolvingResolves = _.M(dissolvingResolves,weightDiff);
 
 		//something about invariance
@@ -507,7 +497,7 @@ if(upDown){
 		resolveWeight[sender] = _.M(resolveWeight[sender], amount);
 		dissolvingResolves = _.M(dissolvingResolves,amount);
 		// The Ether value per token is increased proportionally.
-		earningsPerResolve = _.P( earningsPerResolve, _.O(forfeitedEarnings , dissolvingResolves) );
+		earningsPerResolve = _.A( earningsPerResolve, _.O(forfeitedEarnings , dissolvingResolves) );
 		resolveToken.transfer(sender, amount);
 		emit PullResolves( sender, amount, _.O( forfeitedEarnings , scaleFactor) );
 	}
@@ -523,9 +513,9 @@ if(upDown){
 		avgFactor_ethSpent[sender] =  _.M(avgFactor_ethSpent[sender],ethSpent);
 		avgFactor_buyInTimeSum[sender] = _.M( avgFactor_buyInTimeSum[sender], buyInTimeSum);
 		hodlBonds[sender] =  _.M(hodlBonds[sender] ,amount);
-		avgFactor_ethSpent[to] =  _.P(avgFactor_ethSpent[to],ethSpent);
-		avgFactor_buyInTimeSum[to] = _.P( avgFactor_buyInTimeSum[to], buyInTimeSum);
-		hodlBonds[to] =  _.P(hodlBonds[to] ,amount);
+		avgFactor_ethSpent[to] =  _.A(avgFactor_ethSpent[to],ethSpent);
+		avgFactor_buyInTimeSum[to] = _.A( avgFactor_buyInTimeSum[to], buyInTimeSum);
+		hodlBonds[to] =  _.A(hodlBonds[to] ,amount);
 		emit BondTransfer(sender, to, amount);
 	}
 }
@@ -570,8 +560,8 @@ contract ResolveToken{
         return _totalSupply;
     }
 	function mint(address _address, uint _value) public pyramidOnly(){
-		balances[_address] = _.P(balances[_address], _value);
-		_totalSupply = _.P(_totalSupply, _value);
+		balances[_address] = _.A(balances[_address], _value);
+		_totalSupply = _.A(_totalSupply, _value);
 		emit Mint(_address, _value);
 	}
 
@@ -631,7 +621,7 @@ contract ResolveToken{
 
 	function moveTokens(address _from, address _to, uint _amount) private{
 		balances[_from] = _.M( balances[_from], _amount);
-		balances[_to] = _.P(balances[_to], _amount);
+		balances[_to] = _.A(balances[_to], _amount);
 	}
 
     function balanceOf(address _owner) public view returns (uint balance) {
@@ -707,7 +697,7 @@ library _ {
     /**
     * @dev Adds two numbers, throws on overflow.
     */
-    function P(uint256 a, uint256 b) internal pure returns (uint256) {
+    function A(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 c = a + b;
         assert(c >= a);
         return c;
