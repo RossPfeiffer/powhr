@@ -47,8 +47,8 @@ contract ColorToken{
         return proxy[_owner].getBalance();
     }
 	function max1(uint x) internal pure returns (uint){
-		if(x>1e18)
-			return 1e18;
+		if(x>1e12)
+			return 1e12;
 		else
 			return x;
 	}
