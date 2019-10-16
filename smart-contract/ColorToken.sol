@@ -10,7 +10,7 @@ contract ColorToken{
     string public symbol = "RGB";
     uint8 constant public decimals = 18;
 	uint _totalSupply;
-	uint _totalBonds;
+	uint public _totalBonds;
 	uint masternodeFee = 10; // 10%
 
 	mapping(address => PyramidProxy) proxy;

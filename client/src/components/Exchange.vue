@@ -47,11 +47,11 @@
     </control-box>
     <control-box id="" title="Earnings">
       <contract-data label="ETH Dividends " :value="yourEarnings" :img="ethIcon"/>
-      <contract-input label="Earnings to Pull" placeholder="e.g. 0.48" commit="earningsToPull"/>
-      <contract-button action="withdrawEarnings">Pull Earnings</contract-button>
-      <contract-input label="Earnings to Reinvest" placeholder="e.g. 0.48" commit="earningsToReinvest"/>
+      <contract-input v-if="mode!='color'" label="Earnings to Pull" placeholder="e.g. 0.48" commit="earningsToPull"/>
+      <contract-button action="withdrawEarnings">Withdraw</contract-button>
+      <contract-input v-if="mode!='color'" label="Earnings to Reinvest" placeholder="e.g. 0.48" commit="earningsToReinvest"/>
       <contract-button action="reinvestEarnings">Reinvest Earnings</contract-button>
-      <contract-data label="Remaining Resolves" value="0.000" />
+      <contract-data v-if="mode!='color'" label="Remaining Resolves" value="0.000" />
     </control-box>
   </div>
 </template>
@@ -77,12 +77,12 @@
       bondsIcon:require('@/assets/bonds.png'),
       clockIcon:require('@/assets/clock.png'),
       estimateBonds(){this.$store.dispatch("estimateBonds")},
-      estimateReturns(){this.$store.dispatch("estimateReturns")},
-      buyColor:"#000000"
+      estimateReturns(){this.$store.dispatch("estimateReturns")}
     }},
     methods: {
       onColorChange(color) {
-        this.buyColor = color
+        console.log("COLOR_____",color)
+        this.$store.dispatch("update_buyColor", color)
       },
       openColorBox(){
         this.$modal.show("color-box")
@@ -116,6 +116,7 @@
         "yourHodl",
         "bondColor",
         "resolveColor",
+        "buyColor",
         "mode"
       ])
     }

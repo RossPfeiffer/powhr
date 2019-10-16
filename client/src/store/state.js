@@ -31,6 +31,7 @@ let state = {
   collectiveCurrentHodl:'0',
   bondColor:"#ff88ff",
   resolveColor:"#88ffff",
-  pyramidGateway:"0x000"
+  pyramidGateway:"0x000",
+  buyColor:"#ff9900"
 }
 export default state

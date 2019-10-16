@@ -84,6 +84,7 @@ export const store = new Vuex.Store({
     update_contractToPropose(state,value){state.contractToPropose = value},
     update_bondColor(state,value){state.bondColor = value},
     update_resolveColor(state,value){state.resolveColor = value},
+    update_buyColor(state,value){state.buyColor = value},
     rpcActivate(state){state.rpcActive = true},
   },
   actions: {
@@ -107,6 +108,7 @@ export const store = new Vuex.Store({
                 if(state.mode=="color"){
                   dispatch("getProxyAddress")
                 }else{
+                  relativeAddress = state.currentAddress;
                   commit('rpcActivate')
                 } 
               }
@@ -136,6 +138,7 @@ export const store = new Vuex.Store({
           if(state.mode=="color"){
             dispatch("getProxyAddress")
           }else{
+            relativeAddress = state.currentAddress;
             commit('rpcActivate')
           }
         }
@@ -152,7 +155,7 @@ export const store = new Vuex.Store({
       setInterval(function(){
         if(state.rpcActive) { /**/
           
-          if(state.mode="color"){
+          if(state.mode!="color"){
             powhrAPI.totalSupply().call().then( (r)=>{
               let bigR = Big(r.toString())
               bigR = bigR.div(1e12)
@@ -193,15 +196,15 @@ export const store = new Vuex.Store({
             .toFixed(5).toString())
           })
 
-          powhrAPI.resolveWeight(state.currentAddress).call().then( (r)=>{
+          powhrAPI.resolveWeight(relativeAddress).call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e18)
             let resolves = bigR.toFixed(9)
             commit("update_yourStakedResolves", resolves )
           })
 
-          powhrAPI.avgFactor_buyInTimeSum(state.currentAddress).call().then( (r)=>{
-            powhrAPI.avgFactor_ethSpent(state.currentAddress).call().then( (r2)=>{
+          powhrAPI.avgFactor_buyInTimeSum(relativeAddress).call().then( (r)=>{
+            powhrAPI.avgFactor_ethSpent(relativeAddress).call().then( (r2)=>{
               powhrAPI.NOW().call().then( (r3)=>{
                 if(r2 > 0){
                   let seconds = (r3-(r/0x10000000000000000)/r2);
@@ -215,7 +218,7 @@ export const store = new Vuex.Store({
             })
           })
 
-          powhrAPI.resolveEarnings(state.currentAddress).call().then( (r)=>{
+          powhrAPI.resolveEarnings(relativeAddress).call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e18)
             let numeric = bigR.toFixed(6)
@@ -237,7 +240,7 @@ export const store = new Vuex.Store({
           })/**/
           
 
-          powhrAPI.balanceOf(state.currentAddress).call().then( (r)=>{
+          powhrAPI.balanceOf(relativeAddress).call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e12)
             let bonds = bigR.toFixed(2)
@@ -248,7 +251,7 @@ export const store = new Vuex.Store({
             })
           })
 
-          tokenAPI.balanceOf(state.currentAddress).call().then( (r)=>{
+          tokenAPI.balanceOf(relativeAddress).call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e18)
             let resolves = bigR.toFixed(9)
@@ -256,20 +259,12 @@ export const store = new Vuex.Store({
           })
         }
       },1000)
-    },/*
-      
-      if(state.mode === "color"){
-        colorAPI.proxyAddress(state.currentAddress).call().then( (addr)=>{
-          state.rpcActive = true
-          relativeAddress = addr
-        })
-      }else{
-        relativeAddress = state.currentAddress
-        state.rpcActive = true
-      }*/
+    },
     buyBonds: ({commit, dispatch, state})=>{
       let address, API;
       if(state.mode=="color"){
+        let bigR = Big(r.toString())
+        bigR = bigR.div(1e12)
         API = colorAPI.buy()
         address = colorAddress
       }else{
