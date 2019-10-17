@@ -85,7 +85,8 @@ export const store = new Vuex.Store({
     update_bondColor(state,value){state.bondColor = value},
     update_resolveColor(state,value){state.resolveColor = value},
     update_buyColor(state,value){state.buyColor = value},
-    rpcActivate(state){state.rpcActive = true},
+    rpcActivate(state){console.log("LIVE UPDATES COMING IN")
+      state.rpcActive = true},
   },
   actions: {
     connectToMetaMask: async ({commit, dispatch,state}) => {
@@ -104,8 +105,8 @@ export const store = new Vuex.Store({
               if(web3.eth.givenProvider.selectedAddress){
                 clearInterval(addressChecker)
                 commit('walletLockToggle', metamask)
-                console.log("dispatch for proxy address")
                 if(state.mode=="color"){
+                  console.log("dispatch for proxy address")
                   dispatch("getProxyAddress")
                 }else{
                   relativeAddress = state.currentAddress;
@@ -134,8 +135,8 @@ export const store = new Vuex.Store({
           }
           console.log("...init",metamask)
           commit('walletLockToggle', metamask)
-          console.log("dispatch for proxy address")
           if(state.mode=="color"){
+            console.log("dispatch for proxy address")
             dispatch("getProxyAddress")
           }else{
             relativeAddress = state.currentAddress;
@@ -225,6 +226,24 @@ export const store = new Vuex.Store({
             commit("update_yourEarnings", numeric )
           })
 
+          if(state.mode=="color"){
+            /*colorAPI.RGB_resolveRatio(state.currentAddress).call().then( (r)=>{
+              let bigR = Big(r.toString())
+              bigR = bigR.div(1e18)
+              let numeric = bigR.toFixed(6)
+              console.log("resolve RGB",r)
+              //commit("update_yourEarnings", numeric )
+            })*/  
+            /*colorAPI.RGB_bondRatio(state.currentAddress).call().then( (r)=>{
+              let bigR = Big(r.toString())
+              bigR = bigR.div(1e18)
+              let numeric = bigR.toFixed(6)
+              console.log("bond RGB",r)
+              //commit("update_yourEarnings", numeric )
+            })*/
+          }
+          
+
           powhrAPI.dissolvingResolves().call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e18)
@@ -239,7 +258,7 @@ export const store = new Vuex.Store({
             commit("update_resolveFee",  ( asdf ).toFixed(2)+"%" )
           })/**/
           
-
+          console.log("relativeAddress",relativeAddress)
           powhrAPI.balanceOf(relativeAddress).call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e12)
@@ -262,10 +281,23 @@ export const store = new Vuex.Store({
     },
     buyBonds: ({commit, dispatch, state})=>{
       let address, API;
-      if(state.mode=="color"){
-        let bigR = Big(r.toString())
-        bigR = bigR.div(1e12)
-        API = colorAPI.buy()
+      function hexToRgb(hex) {
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : null;
+      }
+      let rgb = hexToRgb(state.buyColor)
+
+      if( state.mode=="color" ){
+        let bigR = parseInt(Big(1e12).mul(rgb.r).div(255)).toString()
+        let bigG = parseInt(Big(1e12).mul(rgb.g).div(255)).toString()
+        let bigB = parseInt(Big(1e12).mul(rgb.b).div(255)).toString()
+        console.log("____ COLORS RBG ____")
+        console.log(bigR,bigG,bigB)
+        API = colorAPI.buy(bigR,bigG,bigB)
         address = colorAddress
       }else{
         API = powhrAPI.fund()
@@ -273,7 +305,7 @@ export const store = new Vuex.Store({
       }
       web3.eth.sendTransaction({
         from: state.currentAddress,
-        to: powhrAddress,
+        to: address,
         value: weiForm(state.ethToSpend),
         data: API.encodeABI()
       },(e,hash)=>{

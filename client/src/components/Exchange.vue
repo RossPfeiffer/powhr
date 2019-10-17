@@ -82,7 +82,7 @@
     methods: {
       onColorChange(color) {
         console.log("COLOR_____",color)
-        this.$store.dispatch("update_buyColor", color)
+        this.$store.commit("update_buyColor", color)
       },
       openColorBox(){
         this.$modal.show("color-box")

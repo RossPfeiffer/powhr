@@ -1,5 +1,5 @@
 let state = {
-  mode:"color",
+  mode:"",
   rpcActive:false,
   currentAddress: null,
   proxyAddress: null,
@@ -32,6 +32,6 @@ let state = {
   bondColor:"#ff88ff",
   resolveColor:"#88ffff",
   pyramidGateway:"0x000",
-  buyColor:"#ff9900"
+  buyColor:"#e8f7ca"
 }
 export default state
