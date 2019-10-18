@@ -1,5 +1,5 @@
 pragma solidity ^ 0.5.11;
-contract PoWHr{
+contract Pyramid{
 	// scaleFactor is used to convert Ether into bonds and vice-versa: they're of different
 	// orders of magnitude, hence the need to bridge between the two.
 	uint256 constant scaleFactor = 0x10000000000000000;
@@ -550,7 +550,7 @@ contract ResolveToken{
 	mapping(address => mapping(address => uint)) approvals;
 
 	string public name = "Resolve";
-    string public symbol = "PoWHr";
+    string public symbol = "`r";
     uint8 constant public decimals = 18;
 	uint256 private _totalSupply;
 
