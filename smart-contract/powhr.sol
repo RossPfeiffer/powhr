@@ -36,7 +36,7 @@ contract PoWHr{
 	uint256 public dissolved;
 
 	// The ethereum locked up into bonds
-	uint public reserves;
+	uint public contractBalance;
 
 	// Easing in the fee. Make the fee reasonable as the contract is scaling to the size of the ecosystem
 	uint256 public buySum;
@@ -118,7 +118,6 @@ contract PoWHr{
 		// The amount of Ether used to purchase new bonds for the caller
 		uint numEther = value_ - fee;
 		buySum += numEther;
-		reserves += numEther;
 
 		//resolve reward tracking stuff
 		uint currentTime = NOW();
@@ -176,6 +175,7 @@ contract PoWHr{
 	function fund() payable public returns(uint){
 		uint bought;
 		if (msg.value > 0.000001 ether) {
+			contractBalance += msg.value;
 			bought = buy();
 		} else {
 			revert();
@@ -223,7 +223,6 @@ contract PoWHr{
 		// The amount of Ether used to purchase new bonds for the caller.
 		uint numEther = msg.value - fee;
 		buySum += numEther;
-		reserves += numEther;
 
 		//resolve reward tracking stuff
 		uint currentTime = NOW();
@@ -325,15 +324,19 @@ contract PoWHr{
 		}
 		
 		// Send the ethereum to the address that requested the sell.
-		reserves -= numEthers;
+		contractBalance -= numEthers;
 		msg.sender.transfer(numEthers);
 		emit Sell( msg.sender, amount, numEthers, mintedResolves, resolveFee, initialInput_ETH);
 		return (numEthers, mintedResolves);
 	}
 
 	// Dynamic value of Ether in reserve, according to the CRR requirement.
-	function reserve() internal view returns (uint256 amount) {
-		return SafeMath.sub(reserves - msg.value,  (uint256) ((int256) (earningsPerResolve * dissolvingResolves) - totalPayouts) / scaleFactor );
+	function reserve() public view returns (uint256 amount) {
+		return SafeMath.sub( balance(),  (uint256) ((int256) (earningsPerResolve * dissolvingResolves) - totalPayouts) / scaleFactor );
+	}
+	function balance() internal view returns (uint256 amount) {
+		// msg.value is the amount of Ether sent by the transaction.
+		return contractBalance - msg.value;
 	}
 
 	// Calculates the number of bonds that can be bought for a given amount of Ether, according to the
@@ -360,9 +363,7 @@ contract PoWHr{
 		// corresponding to the equation in Dr Jochen Hoenicke's original Ponzi paper, which can be found
 		// at https://test.jochen-hoenicke.de/eth/ponzitoken/ in the third equation, with the CRR numerator
 		// and denominator altered to 1 and 2 respectively.
-		uint x = fixedExp( (fixedLog(_totalSupply-bondTokens)-price_coeff) * crr_d/crr_n);
-
-		return SafeMath.sub(reserveAmount, x);
+		return SafeMath.sub(reserveAmount, fixedExp( (fixedLog(_totalSupply-bondTokens)-price_coeff) * crr_d/crr_n) );
 	}
 
 	// You don't care about these, but if you really do they're hex values for
@@ -472,6 +473,7 @@ contract PoWHr{
 
 		// Increase the total amount that's been paid out to maintain invariance.
 		totalPayouts += resolvePayoutDiff;
+		contractBalance -= amount;
 
 		// Send the resolveEarnings to the address that requested the withdraw.
 		msg.sender.transfer(amount);
