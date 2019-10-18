@@ -20,6 +20,8 @@ Get out the way
 	- scammy token sales
 	- pyramid schemes
 
+	-Most people lose
+
 
 What's the move?
 	Potentials:
@@ -34,13 +36,13 @@ What's the move?
 			-lvl2 IPFS killer (dedicated and secured storage devices)
 			-Decentralize Social Networks, MMORPGs, and Other services
 
-	Talking Shit:
-		-Drug War via untouchable GPS & Privacy network
-
 Mechanics of Distribution:
-	-pyramid
-	-loss & hodl multipliers
-	-dissolves
+	-Buy & Sell of the Pyramid
+	-Loss & Hodl multipliers * ETH => Resolves
+	-Dissolving for Dividends
+------------------------------------
+	-Color Token { RNS | Governance Fund => SideChain }
+		-Affiliate
 
 Variations:
 	-Half Lock, Half Pyramid. Good for governance that doesn't need a lot of money involved.

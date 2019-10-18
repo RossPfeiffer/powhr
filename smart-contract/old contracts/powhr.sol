@@ -48,6 +48,10 @@ contract PoWHr{
 	// base time on when the contract was created
 	uint public genesis;
 
+	// Aggregate sum of all payouts.
+	// Note that this is scaled by the scaleFactor variable.
+	int256 totalPayouts;
+
 	// Variable tracking how much Ether each token is currently worth.
 	// Note that this is scaled by the scaleFactor variable.
 	uint256 earningsPerResolve;
@@ -94,8 +98,9 @@ contract PoWHr{
 		// For maintaing payout invariance
 		int resolvePayoutDiff  = (int256) (earningsPerResolve * weightDiff);
 
-		payouts[msg.sender] += (int256) (amountFromEarnings * scaleFactor) - resolvePayoutDiff;
+		payouts[msg.sender] += resolvePayoutDiff;
 
+		totalPayouts += resolvePayoutDiff;
 
 		// Assign balance to a new variable.
 		uint value_ = (uint) (amountFromEarnings);
@@ -340,18 +345,18 @@ contract PoWHr{
 
 	// Dynamic value of Ether in reserve, according to the CRR requirement.
 	function reserve() internal view returns (uint256 amount) {
-		return reserves - msg.value;
+		return SafeMath.sub(reserves - msg.value,  (uint256) ((int256) (earningsPerResolve * dissolvingResolves) - totalPayouts) / scaleFactor );
 	}
 
 	// Calculates the number of bonds that can be bought for a given amount of Ether, according to the
 	// dynamic reserve and _totalSupply values (derived from the buy and sell prices).
 	function getBondsForEther(uint256 ethervalue) public view returns (uint256 bonds) {
-		return fixedExp( fixedLog( reserve() + ethervalue ) * crr_n/crr_d + price_coeff ) - _totalSupply;
+		return SafeMath.sub(fixedExp( fixedLog( reserve() + ethervalue ) * crr_n/crr_d + price_coeff ) , _totalSupply);
 	}
 
 	// Semantically similar to getBondsForEther, but subtracts the callers balance from the amount of Ether returned for conversion.
 	function calculateBondsFromReinvest(uint256 ethervalue, uint256 subvalue) public view returns (uint256 bondTokens) {
-		return fixedExp(fixedLog(reserve() - subvalue + ethervalue)*crr_n/crr_d + price_coeff) - _totalSupply;
+		return SafeMath.sub(fixedExp(fixedLog(reserve() - subvalue + ethervalue)*crr_n/crr_d + price_coeff) , _totalSupply);
 	}
 
 	// Converts a number bonds into an Ether value.
@@ -368,10 +373,8 @@ contract PoWHr{
 		// at https://test.jochen-hoenicke.de/eth/ponzitoken/ in the third equation, with the CRR numerator
 		// and denominator altered to 1 and 2 respectively.
 		uint x = fixedExp( (fixedLog(_totalSupply-bondTokens)-price_coeff) * crr_d/crr_n);
-		if (x > reserveAmount)
-			return 0;
 
-		return reserveAmount - x;
+		return SafeMath.sub(reserveAmount, x);
 	}
 
 	// You don't care about these, but if you really do they're hex values for
@@ -477,7 +480,10 @@ contract PoWHr{
 		//something about invariance
 		int resolvePayoutDiff  = (int256) (earningsPerResolve * weightDiff);
 
-		payouts[msg.sender] += (int256) (amount * scaleFactor) - resolvePayoutDiff;
+		payouts[msg.sender] += resolvePayoutDiff;
+
+		// Increase the total amount that's been paid out to maintain invariance.
+		totalPayouts += resolvePayoutDiff;
 
 		// Send the resolveEarnings to the address that requested the withdraw.
 		msg.sender.transfer(amount);
@@ -487,7 +493,7 @@ contract PoWHr{
 	event PullResolves( address indexed addr, uint256 pulledResolves, uint256 forfeiture);
 	function pullResolves(uint amount) public{
 		require(amount <= resolveWeight[msg.sender], "that amount is too large");
-		require(amount != dissolvingResolves, "you can't forfeit the last resolves");
+		require(amount != dissolvingResolves, "you can't forfeit the last amount");
 		//something about invariance
 		uint forfeitedEarnings  =  amount * earningsPerResolve;
 
@@ -657,4 +663,50 @@ contract ResolveToken{
     }
 
     event Approval(address indexed src, address indexed guy, uint wad);
+}
+
+/**
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
+ */
+library SafeMath {
+
+    /**
+    * @dev Multiplies two numbers, throws on overflow.
+    */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+        uint256 c = a * b;
+        assert(c / a == b);
+        return c;
+    }
+
+    /**
+    * @dev Integer division of two numbers, truncating the quotient.
+    */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        // assert(b > 0); // Solidity automatically throws when dividing by 0
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+        return c;
+    }
+
+    /**
+    * @dev Substracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+    */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        assert(b <= a);
+        return a - b;
+    }
+
+    /**
+    * @dev Adds two numbers, throws on overflow.
+    */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        assert(c >= a);
+        return c;
+    }
 }
