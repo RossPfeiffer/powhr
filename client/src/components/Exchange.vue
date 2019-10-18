@@ -20,13 +20,13 @@
       <contract-data label="Estimated Bonds" :value="estimatedBonds" />
     </control-box>
     <control-box id="" title="Your Account">
-        <contract-data label="Bonds" :value="yourBonds" :img="bondsIcon"  v-bind:style="{ backgroundColor: bondColor}"/>
-        <contract-data label="ETH Value" :value="yourBondValue" :img="ethIcon" />
-        <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon" v-if="mode!='color'"/>
-        <contract-data label="Your Hodl" :value="yourHodl" :img="clockIcon" />
-        <div class="gap"></div>
-        <div class="gap"></div>
-        <div class="gap"></div>
+        <contract-data v-if="mode=='color'" label="Bonds" :value="yourBonds" :img="bondsIcon"  v-bind:style="{ backgroundColor: bondColor}"/>
+        <div id="wallet-grid">
+          <contract-data label="Bonds" v-if="mode!='color'" :value="yourBonds" :img="bondsIcon"  v-bind:style="{ backgroundColor: bondColor}"/>
+          <contract-data label="ETH Value" :value="yourBondValue" :img="ethIcon" />
+          <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon" v-if="mode!='color'"/>
+          <contract-data label="Your Hodl" :value="yourHodl" :img="clockIcon" />
+        </div>
         <!--<div class="gap"><div class="color-indicator" v-bind:style="{ backgroundColor: bondColor}"><img :src="bondsIcon"/>Bonds</div></div>-->
     </control-box>
     <control-box id="" title="Sell">
@@ -47,11 +47,11 @@
     </control-box>
     <control-box id="" title="Earnings">
       <contract-data label="ETH Dividends " :value="yourEarnings" :img="ethIcon"/>
-      <contract-input v-if="mode!='color'" label="Earnings to Pull" placeholder="e.g. 0.48" commit="earningsToPull"/>
+      <contract-input  label="Earnings to Pull" placeholder="e.g. 0.48" commit="earningsToPull"/>
       <contract-button action="withdrawEarnings">Withdraw</contract-button>
-      <contract-input v-if="mode!='color'" label="Earnings to Reinvest" placeholder="e.g. 0.48" commit="earningsToReinvest"/>
+      <contract-input  label="Earnings to Reinvest" placeholder="e.g. 0.48" commit="earningsToReinvest"/>
       <contract-button action="reinvestEarnings">Reinvest Earnings</contract-button>
-      <contract-data v-if="mode!='color'" label="Remaining Resolves" value="0.000" />
+      <!--<contract-data  label="Remaining Resolves" value="0.000" />-->
     </control-box>
   </div>
 </template>

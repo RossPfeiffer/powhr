@@ -13,17 +13,17 @@ contract ColorToken{
 	uint public _totalBonds;
 	uint masternodeFee = 10; // 10%
 
-	PyramidProxy[] public proxies;
-	mapping(address => uint) proxyID;
+	mapping(address => address payable) proxy;
+	PyramidProxy[] proxies;
 	mapping(address => address) proxyOwner;
 
-	mapping(address => uint256) public redBonds;
-	mapping(address => uint256) public greenBonds;
-	mapping(address => uint256) public blueBonds;
+	mapping(address => uint256) redBonds;
+	mapping(address => uint256) greenBonds;
+	mapping(address => uint256) blueBonds;
 
-	mapping(address => uint256) public redResolves;
-	mapping(address => uint256) public greenResolves;
-	mapping(address => uint256) public blueResolves;
+	mapping(address => uint256) redResolves;
+	mapping(address => uint256) greenResolves;
+	mapping(address => uint256) blueResolves;
 
 	mapping(address => mapping(address => uint)) approvals;
 
@@ -46,7 +46,7 @@ contract ColorToken{
         return _totalSupply;
     }
 	function balanceOf(address addr) public view returns (uint balance) {
-        return proxies[ proxyID[addr] ].getBalance();
+        return PyramidProxy( proxy[addr] ).getBalance();
     }
 	function max1(uint x) internal pure returns (uint){
 		if(x>1e12)
@@ -57,16 +57,13 @@ contract ColorToken{
 	/*function proxy(address addr) returns(PyramidProxy){
 		proxies[proxyID[addr]]
 	}*/
-	function ensureProxy(address addr) internal returns(address proxyAddr){
-		if( proxyAddress(addr) == 0x0000000000000000000000000000000000000000){
-			//proxy[addr] = new PyramidProxy( this, bondContract );
-			PyramidProxy pyramidProxy = new PyramidProxy( this, bondContract );
-			uint ID = proxies.length;
-			proxyID[ address(pyramidProxy) ] = ID;
-			proxies.push( pyramidProxy );
-			proxyOwner[ proxyAddress( addr ) ] = addr;
+	function ensureProxy(address addr) internal{
+		if( proxy[addr] == 0x0000000000000000000000000000000000000000){
+			//PyramidProxy p = new PyramidProxy( this, bondContract );
+			proxies.push( new PyramidProxy( this, bondContract ) );
+			proxy[addr] = address( proxies[proxies.length-1] );
+			proxyOwner[ proxy[addr] ] = addr;
 		}
-		return proxyAddress( addr );
 	}
 	event Buy( address indexed addr, uint256 spent, uint256 bonds, uint red, uint green, uint blue);
 	function buy(uint _red, uint _green, uint _blue) payable public returns(uint bondsCreated){
@@ -83,13 +80,13 @@ contract ColorToken{
 
 		address payable proxyAddr = proxyAddress(sender);
 		proxyAddr.transfer(eth4Bonds);
-		PyramidProxy p = PyramidProxy( proxyAddress(sender) );
-		uint createdBonds = p.buy();
+		uint createdBonds = PyramidProxy( proxyAddr ).buy();/**/
 		_totalBonds += createdBonds;
 		bondsAddColor(sender,createdBonds, _red, _green, _blue);
-		
+
 		pocket[ gateway[sender] ] += fee/2;
-		upline[ gateway[sender] ] += fee/2;
+		upline[ gateway[sender] ] += (fee/2)-(fee/2)/5;
+		pocket[ THIS ] += (fee/2)/5;
 		pushMinecart();
 
 		if( EMIT ){
@@ -99,7 +96,7 @@ contract ColorToken{
 		if( bondBalance(sender) > 10000*1e12 ){
 			lastGateway = sender;	
 		}
-		return createdBonds;
+		return createdBonds;/**/
   	}
 
   	function pushMinecart() public{
@@ -116,9 +113,10 @@ contract ColorToken{
 			minecart[addr] = gateway[ minecart[addr] ];	
 		}
 		address dropOff = minecart[addr];
-		pocket[ dropOff ] += upline[ dropOff ] / 2;
-		upline[ gateway[dropOff] ] += upline[ dropOff ] / 2;
-		upline[ dropOff ] = 0;
+		uint up = upline[ dropOff ];
+		pocket[ dropOff ] +=  up/5;
+		upline[ gateway[dropOff] ] += up - up/5 ;
+		upline[ dropOff ] = 0;/**/
   	}
 
   	event Sell( address indexed addr, uint256 bondsSold, uint256 resolves, uint red, uint green, uint blue);
@@ -145,13 +143,13 @@ contract ColorToken{
 		colorShift(sender, address(bondContract), amountToStake );
 		pushMinecart();
   	}
-  	/*function unstake(uint amountToUnstake) public{
+  	function unstake(uint amountToUnstake) public{
   		address sender = msg.sender;
-		proxy[sender].unstake( amountToUnstake );
+		PyramidProxy(proxy[sender]).unstake( amountToUnstake );
 		colorShift(address(bondContract), sender, amountToUnstake );
 		pushMinecart();
-  	}*/
-  	function reinvest() public{
+  	}/**/
+  	function reinvest(uint amount) public{
   		address sender = msg.sender;
   		//address proxyAddr = proxyAddress( sender );
   		//uint bal = bondContract.balanceOf( proxyAddr );
@@ -162,7 +160,7 @@ contract ColorToken{
 
   		uint createdBonds;
   		uint dissolvedResolves;
-		(createdBonds, dissolvedResolves) = PyramidProxy( proxyAddress(sender) ).reinvest();
+		(createdBonds, dissolvedResolves) = PyramidProxy( proxyAddress(sender) ).reinvest(amount);
 		
 		createdBonds += buy( pocket[sender], red, green, blue, false);
 		_totalBonds += createdBonds;
@@ -175,9 +173,9 @@ contract ColorToken{
 		resolvesThinColor(pyrAddr, currentResolves, currentResolves + dissolvedResolves);
 		pushMinecart();
   	}
-  	function withdraw() public{
+  	function withdraw(uint amount) public{
   		address payable sender = msg.sender;
-  		uint dissolvedResolves = proxy[sender].withdraw();
+  		uint dissolvedResolves = PyramidProxy(proxy[sender]).withdraw(amount);
   		uint earned = pocket[sender];
   		pocket[sender] = 0;
   		sender.transfer( earned );
@@ -189,7 +187,7 @@ contract ColorToken{
   	}
 
 	function proxyAddress(address addr) public view returns(address payable addressOfProxxy){
-		return address(proxies[proxyID[addr]]);//address( proxies[ proxyID[addr] ]  );
+		return address(proxy[addr]);//address( proxies[ proxyID[addr] ]  );
 	}
 	function getProxyOwner(address proxyAddr) public view returns(address ownerAddress){
 		return proxyOwner[proxyAddr];
@@ -283,7 +281,7 @@ contract ColorToken{
 		votesFor[ votingFor[_from] ] -= _amount;
 		votesFor[ votingFor[_to] ] += _amount;
 
-		proxy[_from].transfer( proxyAddress(_to), _amount );
+		PyramidProxy(proxy[_from]).transfer( proxyAddress(_to), _amount );
 	}
 	function RGB_scale(uint r, uint g, uint b, uint numerator, uint denominator) internal pure returns(uint,uint,uint){
 		return (r * numerator / denominator, g * numerator / denominator, b * numerator / denominator );
@@ -293,7 +291,7 @@ contract ColorToken{
 		/*uint red_ratio = redResolves[_from] * _amount / bal;
 		uint green_ratio = greenResolves[_from] * _amount / bal;
 		uint blue_ratio = blueResolves[_from] * _amount / bal;*/
-		(uint red_ratio, uint green_ratio, uint blue_ratio) = RGB_scale(redResolves[_from], greenResolves[_from], blueResolves[_from], _amount, proxy[_from].getBalance() );
+		(uint red_ratio, uint green_ratio, uint blue_ratio) = RGB_scale(redResolves[_from], greenResolves[_from], blueResolves[_from], _amount, PyramidProxy(proxy[_from]).getBalance() );
 		redResolves[_from] -= red_ratio;
 		greenResolves[_from] -= green_ratio;
 		blueResolves[_from] -= blue_ratio;
@@ -309,7 +307,7 @@ contract ColorToken{
     function transferFrom(address src, address dst, uint wad) public returns (bool){
     	address sender = msg.sender;
         require(approvals[src][sender] >=  wad);
-        require(proxy[src].getBalance() >=  wad);
+        require(PyramidProxy(proxy[src]).getBalance() >=  wad);
         if (src != sender) {
             approvals[src][sender] -=  wad;
         }
@@ -385,7 +383,7 @@ contract ColorToken{
 		bondsThinColor( sender, sendersFormerTotalBonds - amount, sendersFormerTotalBonds);
 		(uint r, uint g, uint b) = RGB_bondRatio(sender);
 		bondsAddColor( to, amount, r, g, b );
-		proxy[sender].bondTransfer( proxyAddress(to) , amount);
+		PyramidProxy(proxy[sender]).bondTransfer( proxyAddress(to) , amount);
 		emit BondTransfer(sender, to, amount, r, g, b);
 	}*/
 }
@@ -425,20 +423,20 @@ contract PyramidProxy{
 		require(msg.sender == address(router));
 		_;
     }
-	function () payable external routerOnly(){
-		ETH += msg.value;
+	function () payable external{
+		//ETH += msg.value;
 	}
 
 	function buy() public routerOnly() returns(uint){
-		uint _ETH = ETH;
-		ETH = 0;
-		return bondContract.fund.value( _ETH )();
+		//uint _ETH = ETH;
+		//ETH = 0;
+		return bondContract.fund.value( THIS.balance )();
 	}
 	function cash2Owner() internal{
 		address payable owner = address(uint160( router.getProxyOwner( THIS ) ) );
-		uint _ETH = ETH;
-		ETH = 0;
-		owner.transfer( _ETH );
+		//uint _ETH = ETH;
+		//ETH = 0;
+		owner.transfer( THIS.balance );
 	}
 	function getBalance() public view returns (uint balance) {
 		address bC = address(bondContract);
@@ -448,14 +446,14 @@ contract PyramidProxy{
 			return resolveContract.balanceOf( THIS );	
 		}
     }
-    function resolveEarnings() internal view returns(uint){
+    /*function resolveEarnings() internal view returns(uint){
     	return bondContract.resolveEarnings( THIS );
-    }
-	function reinvest() public routerOnly() returns(uint,uint){
-		return bondContract.reinvestEarnings( resolveEarnings() );
+    }*/
+	function reinvest(uint amount) public routerOnly() returns(uint,uint){
+		return bondContract.reinvestEarnings( amount );
 	}
-	function withdraw() public routerOnly() returns(uint){
-		uint dissolvedResolves = bondContract.withdraw( resolveEarnings() );
+	function withdraw(uint amount) public routerOnly() returns(uint){
+		uint dissolvedResolves = bondContract.withdraw( amount );
 		cash2Owner();
 		return dissolvedResolves;
 	}

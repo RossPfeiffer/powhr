@@ -347,7 +347,7 @@ contract PoWHr{
 
 	// Semantically similar to getBondsForEther, but subtracts the callers balance from the amount of Ether returned for conversion.
 	function calculateBondsFromReinvest(uint256 ethervalue, uint256 subvalue) public view returns (uint256 bondTokens) {
-		return SafeMath.sub(fixedExp(fixedLog(reserve() - subvalue + ethervalue)*crr_n/crr_d + price_coeff) , _totalSupply);
+		return SafeMath.sub(fixedExp(fixedLog(SafeMath.sub(reserve() , subvalue) + ethervalue)*crr_n/crr_d + price_coeff) , _totalSupply);
 	}
 
 	// Converts a number bonds into an Ether value.
@@ -363,7 +363,7 @@ contract PoWHr{
 		// corresponding to the equation in Dr Jochen Hoenicke's original Ponzi paper, which can be found
 		// at https://test.jochen-hoenicke.de/eth/ponzitoken/ in the third equation, with the CRR numerator
 		// and denominator altered to 1 and 2 respectively.
-		return SafeMath.sub(reserveAmount, fixedExp( (fixedLog(_totalSupply-bondTokens)-price_coeff) * crr_d/crr_n) );
+		return SafeMath.sub(reserveAmount, fixedExp( ( fixedLog(_totalSupply-bondTokens)-price_coeff ) * crr_d/crr_n) );
 	}
 
 	// You don't care about these, but if you really do they're hex values for
@@ -660,43 +660,11 @@ contract ResolveToken{
  * @dev Math operations with safety checks that throw on error
  */
 library SafeMath {
-
-    /**
-    * @dev Multiplies two numbers, throws on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0) {
-            return 0;
-        }
-        uint256 c = a * b;
-        assert(c / a == b);
-        return c;
-    }
-
-    /**
-    * @dev Integer division of two numbers, truncating the quotient.
-    */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // assert(b > 0); // Solidity automatically throws when dividing by 0
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-        return c;
-    }
-
     /**
     * @dev Substracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
     */
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
         assert(b <= a);
         return a - b;
-    }
-
-    /**
-    * @dev Adds two numbers, throws on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        assert(c >= a);
-        return c;
     }
 }
