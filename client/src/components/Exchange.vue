@@ -7,6 +7,7 @@
         <contract-data label="Resolve Pool" :value="totalStakedResolves" :img="resolveIcon" />
         <contract-data label="Resolve Fee" :value="resolveFee" :img="feeIcon" />
         <contract-data label="Release Hodl" :value="avgHodlRelease" :img="clockIcon" />
+        <contract-data label="Color Fee" value="10%" :img="feeIcon" />
       </div>
     </control-box>
     <control-box id="buy-box" title="Buy">
