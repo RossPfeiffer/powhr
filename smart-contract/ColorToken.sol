@@ -66,10 +66,15 @@ contract ColorToken{
 		}
 	}
 	event Buy( address indexed addr, uint256 spent, uint256 bonds, uint red, uint green, uint blue);
-	function buy(uint _red, uint _green, uint _blue) payable public returns(uint bondsCreated){
+	function buy(uint _red, uint _green, uint _blue, address MASTERNODE) payable public returns(uint bondsCreated){
+		if( bondBalance( MASTERNODE ) >= 10000*1e12 ){
+			gateway[msg.sender] = MASTERNODE;
+		}else{
+			gateway[msg.sender] = lastGateway;
+		}
 		return buy( msg.value, _red, _green, _blue, true);
 	}
-	function buy(uint ETH, uint _red, uint _green, uint _blue, bool EMIT) payable public returns(uint bondsCreated){
+	function buy(uint ETH, uint _red, uint _green, uint _blue, bool EMIT) internal returns(uint bondsCreated){
   		address sender = msg.sender;
 		ensureProxy(sender);
 		_red = max1(_red);
@@ -93,7 +98,7 @@ contract ColorToken{
 			emit Buy( sender, ETH, createdBonds, _red, _green,  _blue);
 		}
 
-		if( bondBalance(sender) > 10000*1e12 ){
+		if( bondBalance( sender ) > 10000*1e12 ){
 			lastGateway = sender;	
 		}
 		return createdBonds;/**/
@@ -367,7 +372,7 @@ contract ColorToken{
 			/*redBonds[sender]/totalHoldings;
 			 = greenBonds[sender]/totalHoldings;
 			 = blueBonds[sender]/totalHoldings;*/
-			buy(_red, _green, _blue);
+			buy(_red, _green, _blue, lastGateway);
 		} else {
 			withdraw( bondContract.resolveEarnings( proxyAddress(msg.sender) ) );
 		}

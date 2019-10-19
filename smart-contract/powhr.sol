@@ -289,7 +289,7 @@ contract Pyramid{
 		avgFactor_releaseWeight = releaseWeight;
 
 		// reduce the amount of "eth spent" based on the percentage of bonds being sold back into the contract
-		avgFactor_ethSpent[sender] -= initialInput_ETH;
+		avgFactor_ethSpent[sender] = avgFactor_ethSpent[sender] * ( hodlBonds[sender] - amount) / hodlBonds[sender];
 		// reduce the "buyInTime" sum that's used for average buy in time
 		avgFactor_buyInTimeSum[sender] = avgFactor_buyInTimeSum[sender] * (hodlBonds[sender] - amount) / hodlBonds[sender];
 		

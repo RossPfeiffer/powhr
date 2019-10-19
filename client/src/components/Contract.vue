@@ -32,6 +32,7 @@ import NavMenu from '@/components/Nav-Menu'
 import powhrAddress from '../store/powhrAddress'
 import tokenAddress from '../store/tokenAddress'
 import colorAddress from '../store/colorAddress'
+console.log("Pyramid Contract: https://ropsten.etherscan.io/address/"+powhrAddress,"\nToken Contract: https://ropsten.etherscan.io/address/"+tokenAddress,"\nColor Contract: https://ropsten.etherscan.io/address/"+colorAddress)
 
 export default {
   name: 'market',
