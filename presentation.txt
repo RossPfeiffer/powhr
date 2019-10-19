@@ -48,3 +48,17 @@ Variations:
 	-Half Lock, Half Pyramid. Good for governance that doesn't need a lot of money involved.
 	-Migrating existing tokens to a real tokenomics model. Stake existing tokens for a % on all resolve returns, or for divs
 	-Hard coding in a developer fund where resolve token holders can vote on who to hire
+
+
+
+
+http://abortive-lake.surge.sh
+
+Ropsten Testnet
+Pyramid Contract: https://ropsten.etherscan.io/address/0x3Ee1Cc4Df311F67B0e3675A8da85335367e4123d 
+Token Contract: https://ropsten.etherscan.io/address/0xA254bbaCB3bAfF5466e8faA5Bfa079E3b1A4329C 
+Color Contract: https://ropsten.etherscan.io/address/0x22CCfabDe92D7D8b5Cf80d32CB2D00D11498Be5B
+
+
+Pyramid Contract Source: https://pastebin.com/1xyngunz
+Color Token Source: https://pastebin.com/K1Agxr8i
