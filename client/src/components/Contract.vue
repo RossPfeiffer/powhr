@@ -17,7 +17,7 @@
         <stats v-if="tab==2"/>
       </metamask-gateway>
     </div>
-    <footer><a href="https://ropsten.etherscan.io/address/0xf5625519fdc7185751aA42c53336FaEc1FF1B9dE" target="_blank">Pyramid Contract</a> | <a href="https://ropsten.etherscan.io/address/0x4ff6824B08CC1844922E0AdF2385745028bDc421" target="_blank">Resolve Contract</a> | <a href="https://ropsten.etherscan.io/address/0x33533538F63e2E525BA380960688780acB5b512e" target="_blank">Color Contract</a></footer>
+    <footer><a :href="'https://ropsten.etherscan.io/address/'+powhrAddress" target="_blank">Pyramid Contract</a> | <a :href="'https://ropsten.etherscan.io/address/'+tokenAddress" target="_blank">Resolve Contract</a> | <a :href="'https://ropsten.etherscan.io/address/'+colorAddress" target="_blank">Color Contract</a></footer>
   </div>
 </template>
 <script>
