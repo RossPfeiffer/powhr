@@ -50,8 +50,8 @@ Variations:
 	-Hard coding in a developer fund where resolve token holders can vote on who to hire
 
 
-Core Contract: http://lewd-trucks.surge.sh
-Color Wrapper: http://third-drawer.surge.sh
+Core Contract: http://prismtokenomics.com/#/contract
+Color Wrapper: http://young-government.surge.sh/#/contract
 
 Ropsten Testnet
 Pyramid Contract: https://ropsten.etherscan.io/address/0x6C64A4fDD4466833aa82185a50615AC94ecc6971 
@@ -59,5 +59,5 @@ Token Contract: https://ropsten.etherscan.io/address/0xf8dbD6E80eAF860914E871abc
 Color Contract: https://ropsten.etherscan.io/address/0xC965e67e7cCc505e2522cf9EB22D7412DC2E8D34
 
 
-Pyramid Contract Source: https://pastebin.com/1xyngunz
-Color Token Source: https://pastebin.com/qkW7BMZp
+Pyramid Contract Source: https://github.com/Econymous/powhr/blob/master/smart-contract/powhr.sol
+Color Token Source: https://github.com/Econymous/powhr/blob/master/smart-contract/ColorToken.sol

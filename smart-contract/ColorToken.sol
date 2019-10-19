@@ -356,12 +356,12 @@ contract ColorToken{
   	}
   	function RGB_bondRatio(address addr) public view returns(uint,uint,uint){
   		uint bonds = bondBalance(addr);
-  		if (bonds==0) return (0,0,0)
+  		if (bonds==0) return (0,0,0);
   		return (redBonds[sender]/bonds, greenBonds[sender]/bonds, blueBonds[sender]/bonds);
   	}
   	function RGB_resolveRatio(address addr) public view returns(uint,uint,uint){
   		uint resolves = balanceOf(addr);
-  		if (resolves==0) return (0,0,0)
+  		if (resolves==0) return (0,0,0);
   		return (redResolves[sender]/resolves, greenResolves[sender]/resolves, blueResolves[sender]/resolves);
   	}
 	function () payable external {

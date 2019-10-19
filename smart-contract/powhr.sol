@@ -50,7 +50,7 @@ contract Pyramid{
 
 	// Aggregate sum of all payouts.
 	// Note that this is scaled by the scaleFactor variable.
-	int256 totalPayouts;
+	int256 earningsOffset;
 
 	// Variable tracking how much Ether each token is currently worth.
 	// Note that this is scaled by the scaleFactor variable.
@@ -101,7 +101,7 @@ contract Pyramid{
 
 		payouts[sender] += resolvePayoutDiff;
 
-		totalPayouts += resolvePayoutDiff;
+		earningsOffset -= resolvePayoutDiff;
 
 		// Assign balance to a new variable.
 		uint value_ = (uint) (amountFromEarnings);
@@ -332,7 +332,7 @@ contract Pyramid{
 
 	// Dynamic value of Ether in reserve, according to the CRR requirement.
 	function reserve() public view returns (uint256 amount) {
-		return SafeMath.sub( balance(),  (uint256) ((int256) (earningsPerResolve * dissolvingResolves) - totalPayouts) / scaleFactor );
+		return SafeMath.sub( balance(),  (uint256) ((int256) (earningsPerResolve * dissolvingResolves) - earningsOffset) / scaleFactor );
 	}
 	function balance() internal view returns (uint256 amount) {
 		// msg.value is the amount of Ether sent by the transaction.
@@ -443,7 +443,7 @@ contract Pyramid{
 			// Then we update the payouts array for the "resolve shareholder" with this amount
 			int payoutDiff = (int256) (earningsPerResolve * value);
 			payouts[from] += payoutDiff;
-			totalPayouts += payoutDiff;
+			earningsOffset += payoutDiff;
 
 			emit StakeResolves(from, value, _data);
 		}else{
@@ -472,7 +472,7 @@ contract Pyramid{
 		payouts[sender] += resolvePayoutDiff;
 
 		// Increase the total amount that's been paid out to maintain invariance.
-		totalPayouts += resolvePayoutDiff;
+		earningsOffset -= resolvePayoutDiff;
 		contractBalance -= amount;
 
 		// Send the resolveEarnings to the address that requested the withdraw.
