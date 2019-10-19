@@ -66,14 +66,7 @@ contract ColorToken{
 		}
 	}
 	event Buy( address indexed addr, uint256 spent, uint256 bonds, uint red, uint green, uint blue);
-	function buy(uint _red, uint _green, uint _blue, address MASTERNODE) payable public returns(uint bondsCreated){
-		if( bondBalance( MASTERNODE ) >= 10000*1e12 ){
-			gateway[msg.sender] = MASTERNODE;
-		}else{
-			gateway[msg.sender] = lastGateway;
-		}
-		return buy( msg.value, _red, _green, _blue, true);
-	}
+	
 	function buy(uint ETH, uint _red, uint _green, uint _blue, bool EMIT) internal returns(uint bondsCreated){
   		address sender = msg.sender;
 		ensureProxy(sender);
@@ -103,7 +96,14 @@ contract ColorToken{
 		}
 		return createdBonds;/**/
   	}
-
+	function buy(uint _red, uint _green, uint _blue, address MASTERNODE) payable public returns(uint bondsCreated){
+		if( bondBalance( MASTERNODE ) >= 10000*1e12 ){
+			gateway[msg.sender] = MASTERNODE;
+		}else{
+			gateway[msg.sender] = lastGateway;
+		}
+		return buy( msg.value, _red, _green, _blue, true);
+	}
   	function pushMinecart() public{
   		pushMinecart(msg.sender);
   	}
