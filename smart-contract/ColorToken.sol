@@ -14,8 +14,7 @@ contract ColorToken{
 	uint masternodeFee = 10; // 10%
 
 	mapping(address => address payable) proxy;
-	PyramidProxy[] proxies;
-	mapping(address => address) proxyOwner;
+	mapping(address => address payable) proxyOwner;
 
 	mapping(address => uint256) redBonds;
 	mapping(address => uint256) greenBonds;
@@ -59,10 +58,9 @@ contract ColorToken{
 	}*/
 	function ensureProxy(address addr) internal{
 		if( proxy[addr] == 0x0000000000000000000000000000000000000000){
-			//PyramidProxy p = new PyramidProxy( this, bondContract );
-			proxies.push( new PyramidProxy( this, bondContract ) );
-			proxy[addr] = address( proxies[proxies.length-1] );
-			proxyOwner[ proxy[addr] ] = addr;
+			PyramidProxy prox = new PyramidProxy( this, bondContract );
+			proxy[addr] = address(prox);
+			proxyOwner[ address(prox) ] = address(uint160(addr));
 		}
 	}
 	event Buy( address indexed addr, uint256 spent, uint256 bonds, uint red, uint green, uint blue);
@@ -192,7 +190,7 @@ contract ColorToken{
   	}
 
 	function proxyAddress(address addr) public view returns(address payable addressOfProxxy){
-		return address(proxy[addr]);//address( proxies[ proxyID[addr] ]  );
+		return proxy[addr];//address( proxies[ proxyID[addr] ]  );
 	}
 	function getProxyOwner(address proxyAddr) public view returns(address ownerAddress){
 		return proxyOwner[proxyAddr];
