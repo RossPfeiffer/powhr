@@ -300,7 +300,7 @@ export const store = new Vuex.Store({
         let bigB = parseInt(Big(1e12).mul(rgb.b).div(255)).toString()
         console.log("____ COLORS RBG ____")
         console.log(bigR,bigG,bigB)
-        API = colorAPI.buy(bigR,bigG,bigB)
+        API = colorAPI.buy(bigR,bigG,bigB,"0x0000000000000000000000000000000000000000")
         address = colorAddress
       }else{
         API = powhrAPI.fund()
@@ -408,7 +408,7 @@ export const store = new Vuex.Store({
     withdrawEarnings: async({commit, dispatch, state})=>{
       let address, API;
       if(state.mode=="color"){
-        API = colorAPI.withdraw()
+        API = colorAPI.withdraw(weiForm(state.earningsToPull))
         address = colorAddress
       }else{
         API = powhrAPI.withdraw( weiForm(state.earningsToPull) )
@@ -425,7 +425,7 @@ export const store = new Vuex.Store({
     reinvestEarnings: async({commit, dispatch, state})=>{
       let address, API;
       if(state.mode=="color"){
-        API = colorAPI.reinvest()
+        API = colorAPI.reinvest(weiForm(state.earningsToReinvest))
         address = colorAddress
       }else{
         API = powhrAPI.reinvestEarnings( weiForm(state.earningsToReinvest) )
