@@ -29,17 +29,23 @@ import DAO from '@/components/DAO'
 import Stats from '@/components/Stats'
 import NavMenu from '@/components/Nav-Menu'
 
+import powhrAddress from '../store/powhrAddress'
+import tokenAddress from '../store/tokenAddress'
+import colorAddress from '../store/colorAddress'
+
 export default {
   name: 'market',
   created(){
     this.$store.dispatch("connectToMetaMask")
   },
   data(){return{
-      tab:0
+      tab:0,
+      powhrAddress:powhrAddress,
+      tokenAddress:tokenAddress,
+      colorAddress:colorAddress
   }},
   methods:{
     tabSelect(x){
-      console.log("asdfasdfasd", x)
       this.tab = x;
     }
   },

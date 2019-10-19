@@ -86,19 +86,20 @@ contract Pyramid{
 	// withdraw it first. Saves on gas and potential price spike loss.
 	event Reinvest( address indexed addr, uint256 reinvested, uint256 dissolved, uint256 bonds, uint256 resolveTax);
 	function reinvestEarnings(uint amountFromEarnings) public returns(uint,uint){
+		address sender = msg.sender;
 		// Retrieve the resolveEarnings associated with the address the request came from.		
-		uint totalEarnings = resolveEarnings(msg.sender);
+		uint totalEarnings = resolveEarnings(sender);
 		require(amountFromEarnings <= totalEarnings, "the amount exceeds total earnings");
-		uint oldWeight = resolveWeight[msg.sender];
-		resolveWeight[msg.sender] = oldWeight *  (totalEarnings - amountFromEarnings) / totalEarnings;
-		uint weightDiff = oldWeight - resolveWeight[msg.sender];
+		uint oldWeight = resolveWeight[sender];
+		resolveWeight[sender] = oldWeight *  (totalEarnings - amountFromEarnings) / totalEarnings;
+		uint weightDiff = oldWeight * amountFromEarnings / totalEarnings;
 		dissolved += weightDiff;
 		dissolvingResolves -= weightDiff;
 
 		// For maintaing payout invariance
 		int resolvePayoutDiff  = (int256) (earningsPerResolve * weightDiff);
 
-		payouts[msg.sender] += resolvePayoutDiff;
+		payouts[sender] += resolvePayoutDiff;
 
 		totalPayouts += resolvePayoutDiff;
 
@@ -109,9 +110,6 @@ contract Pyramid{
 		if (value_ < 0.000001 ether)
 			revert();
 
-		// msg.sender is the address of the caller.
-		address sender = msg.sender;
-
 		// Calculate the fee
 		uint fee = fluxFee(value_);
 
@@ -121,8 +119,8 @@ contract Pyramid{
 
 		//resolve reward tracking stuff
 		uint currentTime = NOW();
-		avgFactor_ethSpent[msg.sender] += numEther;
-		avgFactor_buyInTimeSum[msg.sender] += currentTime * scaleFactor * numEther;
+		avgFactor_ethSpent[sender] += numEther;
+		avgFactor_buyInTimeSum[sender] += currentTime * scaleFactor * numEther;
 
 		// The number of bonds which can be purchased for numEther.
 		uint createdBonds = calculateBondsFromReinvest(numEther, amountFromEarnings);
@@ -148,7 +146,7 @@ contract Pyramid{
 		// Assign the bonds to the balance of the buyer.
 		hodlBonds[sender] += createdBonds;
 
-		emit Reinvest(msg.sender, value_, weightDiff, createdBonds, resolveFee);
+		emit Reinvest(sender, value_, weightDiff, createdBonds, resolveFee);
 		return (createdBonds, weightDiff);
 	}
 
@@ -213,6 +211,7 @@ contract Pyramid{
 
 	event Buy( address indexed addr, uint256 spent, uint256 bonds, uint256 resolveTax);
 	function buy() internal returns(uint){
+		address sender = msg.sender;
 		// Any transaction of less than 1 szabo is likely to be worth less than the gas used to send it.
 		if ( msg.value < 0.000001 ether )
 			revert();
@@ -226,8 +225,8 @@ contract Pyramid{
 
 		//resolve reward tracking stuff
 		uint currentTime = NOW();
-		avgFactor_ethSpent[msg.sender] += numEther;
-		avgFactor_buyInTimeSum[msg.sender] += currentTime * scaleFactor * numEther;
+		avgFactor_ethSpent[sender] += numEther;
+		avgFactor_buyInTimeSum[sender] += currentTime * scaleFactor * numEther;
 
 		// The number of bonds which can be purchased for numEther.
 		uint createdBonds = getBondsForEther(numEther);
@@ -236,7 +235,7 @@ contract Pyramid{
 		_totalSupply += createdBonds;
 
 		// Assign the bonds to the balance of the buyer.
-		hodlBonds[msg.sender] += createdBonds;
+		hodlBonds[sender] += createdBonds;
 
 		// Check if we have bonds in existence
 		uint resolveFee;
@@ -250,7 +249,7 @@ contract Pyramid{
 			// The Ether value per resolve is increased proportionally.
 			earningsPerResolve += rewardPerResolve;
 		}
-		emit Buy( msg.sender, msg.value, createdBonds, resolveFee);
+		emit Buy( sender, msg.value, createdBonds, resolveFee);
 		return createdBonds;
 	}
 	function NOW() public view returns(uint time){
@@ -273,25 +272,26 @@ contract Pyramid{
 	}
 	event Sell( address indexed addr, uint256 bondsSold, uint256 cashout, uint256 resolves, uint256 resolveTax, uint256 initialCash);
 	function sell(uint256 amount) internal returns(uint eth, uint resolves){
+		address payable sender = msg.sender;
 	  	// Calculate the amount of Ether & Resolves that the holder's bonds sell for at the current sell price.
 		uint numEthersBeforeFee;
 		uint mintedResolves;
 		uint releaseTimeSum;
 		uint releaseWeight;
 		uint initialInput_ETH;
-		(numEthersBeforeFee,mintedResolves,releaseTimeSum,releaseWeight,initialInput_ETH) = getReturnsForBonds(msg.sender, amount);
+		(numEthersBeforeFee,mintedResolves,releaseTimeSum,releaseWeight,initialInput_ETH) = getReturnsForBonds(sender, amount);
 
 		// magic distribution
-		resolveToken.mint(msg.sender, mintedResolves);
+		resolveToken.mint(sender, mintedResolves);
 
 		// update weighted average cashout time
 		avgFactor_releaseTimeSum = releaseTimeSum;
 		avgFactor_releaseWeight = releaseWeight;
 
 		// reduce the amount of "eth spent" based on the percentage of bonds being sold back into the contract
-		avgFactor_ethSpent[msg.sender] -= initialInput_ETH;
+		avgFactor_ethSpent[sender] -= initialInput_ETH;
 		// reduce the "buyInTime" sum that's used for average buy in time
-		avgFactor_buyInTimeSum[msg.sender] = avgFactor_buyInTimeSum[msg.sender] * (hodlBonds[msg.sender] - amount) / hodlBonds[msg.sender];
+		avgFactor_buyInTimeSum[sender] = avgFactor_buyInTimeSum[sender] * (hodlBonds[sender] - amount) / hodlBonds[sender];
 		
 		// calculate the fee
 	    uint fee = fluxFee(numEthersBeforeFee);
@@ -306,7 +306,7 @@ contract Pyramid{
 		_totalSupply -= amount;
 
 	    // Remove the bonds from the balance of the buyer.
-	    hodlBonds[msg.sender] -= amount;
+	    hodlBonds[sender] -= amount;
 
 
 		// Check if we have bonds in existence
@@ -325,8 +325,8 @@ contract Pyramid{
 		
 		// Send the ethereum to the address that requested the sell.
 		contractBalance -= numEthers;
-		msg.sender.transfer(numEthers);
-		emit Sell( msg.sender, amount, numEthers, mintedResolves, resolveFee, initialInput_ETH);
+		sender.transfer(numEthers);
+		emit Sell( sender, amount, numEthers, mintedResolves, resolveFee, initialInput_ETH);
 		return (numEthers, mintedResolves);
 	}
 
@@ -457,47 +457,49 @@ contract Pyramid{
 	// the requisite global variables, and transfers Ether back to the caller.
 	event Withdraw( address indexed addr, uint256 earnings, uint256 dissolve );
 	function withdraw(uint amount) public returns(uint){
+		address payable sender = msg.sender;
 		// Retrieve the resolveEarnings associated with the address the request came from.
-		uint totalEarnings = resolveEarnings(msg.sender);
+		uint totalEarnings = resolveEarnings(sender);
 		require(amount <= totalEarnings, "the amount exceeds total earnings");
-		uint oldWeight = resolveWeight[msg.sender];
-		resolveWeight[msg.sender] = oldWeight * (totalEarnings - amount) / totalEarnings;
-		uint weightDiff = oldWeight - resolveWeight[msg.sender];
+		uint oldWeight = resolveWeight[sender];
+		resolveWeight[sender] = oldWeight * (totalEarnings - amount) / totalEarnings;
+		uint weightDiff = oldWeight * amount / totalEarnings;
 		dissolved += weightDiff;
 		dissolvingResolves -= weightDiff;
 
 		//something about invariance
 		int resolvePayoutDiff  = (int256) (earningsPerResolve * weightDiff);
 
-		payouts[msg.sender] += resolvePayoutDiff;
+		payouts[sender] += resolvePayoutDiff;
 
 		// Increase the total amount that's been paid out to maintain invariance.
 		totalPayouts += resolvePayoutDiff;
 		contractBalance -= amount;
 
 		// Send the resolveEarnings to the address that requested the withdraw.
-		msg.sender.transfer(amount);
-		emit Withdraw( msg.sender, amount, weightDiff);
+		sender.transfer(amount);
+		emit Withdraw( sender, amount, weightDiff);
 		return weightDiff;
 	}
 	event PullResolves( address indexed addr, uint256 pulledResolves, uint256 forfeiture);
 	function pullResolves(uint amount) public{
-		require(amount <= resolveWeight[msg.sender], "that amount is too large");
+		address sender = msg.sender;
+		uint resolves = resolveWeight[sender];
+		require(amount <= resolves, "that amount is too large");
 		require(amount != dissolvingResolves, "you can't forfeit the last amount");
-		//something about invariance
-		uint forfeitedEarnings  =  amount * earningsPerResolve;
+
+		int256 allEarnings = (int256)(resolves * earningsPerResolve) - payouts[sender];
+		uint forfeitedEarnings = (uint)( (int256)(amount * earningsPerResolve) / allEarnings );
 
 		// Update the payout array so that the "resolve shareholder" cannot claim resolveEarnings on previous staked resolves.
+		payouts[sender] += (int256)(forfeitedEarnings);
 
-		// Then we update the payouts array for the "resolve shareholder" with this amount
-		payouts[msg.sender] -= (int256) (earningsPerResolve * amount);
-
-		resolveWeight[msg.sender] -= amount;
+		resolveWeight[sender] -= amount;
 		dissolvingResolves -= amount;
 		// The Ether value per token is increased proportionally.
-		earningsPerResolve += forfeitedEarnings /dissolvingResolves;
-		resolveToken.transfer(msg.sender, amount);
-		emit PullResolves( msg.sender, amount, forfeitedEarnings / scaleFactor);
+		earningsPerResolve += forfeitedEarnings / dissolvingResolves;
+		resolveToken.transfer(sender, amount);
+		emit PullResolves( sender, amount, forfeitedEarnings / scaleFactor);
 	}
 
 	event BondTransfer(address from, address to, uint amount);
@@ -610,10 +612,11 @@ contract ResolveToken{
 
 	//function that is called when transaction target is a contract
 	function transferToContract(address _to, uint _value, bytes memory _data) private returns (bool success) {
-		moveTokens(msg.sender, _to, _value);
+		address sender = msg.sender;
+		moveTokens(sender, _to, _value);
 		ERC223ReceivingContract reciever = ERC223ReceivingContract(_to);
-		reciever.tokenFallback(msg.sender, _value, _data);
-		emit Transfer(msg.sender, _to, _value, _data);
+		reciever.tokenFallback(sender, _value, _data);
+		emit Transfer(sender, _to, _value, _data);
 		return true;
 	}
 
@@ -631,10 +634,11 @@ contract ResolveToken{
     }
 
     function transferFrom(address src, address dst, uint wad) public returns (bool){
-        require(approvals[src][msg.sender] >=  wad, "That amount is not approved");
+		address sender = msg.sender;
+        require(approvals[src][sender] >=  wad, "That amount is not approved");
         require(balances[src] >=  wad, "That amount is not available from this wallet");
-        if (src != msg.sender) {
-            approvals[src][msg.sender] -=  wad;
+        if (src != sender) {
+            approvals[src][sender] -=  wad;
         }
 		moveTokens(src,dst,wad);
 

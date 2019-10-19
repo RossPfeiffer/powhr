@@ -369,7 +369,7 @@ contract ColorToken{
 			 = blueBonds[sender]/totalHoldings;*/
 			buy(_red, _green, _blue);
 		} else {
-			withdraw();
+			withdraw( bondContract.resolveEarnings( proxyAddress(msg.sender) ) );
 		}
 	}
 
