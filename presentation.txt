@@ -52,7 +52,8 @@ Variations:
 
 
 
-http://abortive-lake.surge.sh
+http://insidious-yak.surge.sh
+http://lewd-trucks.surge.sh
 
 Ropsten Testnet
 Pyramid Contract: https://ropsten.etherscan.io/address/0x3Ee1Cc4Df311F67B0e3675A8da85335367e4123d 

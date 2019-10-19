@@ -14,7 +14,7 @@
       <contract-data label="Buy Price" :value="buyPrice" />
       <contract-input label="ETH to spend" placeholder="e.g. 0.12" commit="ethToSpend" :onChange="estimateBonds"/>
       <contract-button action="buyBonds">Buy Bonds</contract-button>
-      <button id="bond-color-picker" v-on:click="openColorBox" v-bind:style="{ backgroundColor: buyColor}"></button>
+      <button id="bond-color-picker" v-if="mode=='color'"  v-on:click="openColorBox" v-bind:style="{ backgroundColor: buyColor}"></button>
       <modal id="color-box" name="color-box" :width="240" :height="240" classes="color-modal">
         <ColorPicker :width="240" :height="240" :disabled="false" :startColor="buyColor" @colorChange="onColorChange"></ColorPicker>
       </modal>
@@ -23,7 +23,7 @@
     <control-box id="" title="Your Account">
         <contract-data v-if="mode=='color'" label="Bonds" :value="yourBonds" :img="bondsIcon"  v-bind:style="{ backgroundColor: bondColor}"/>
         <div id="wallet-grid">
-          <contract-data label="Bonds" v-if="mode!='color'" :value="yourBonds" :img="bondsIcon"  v-bind:style="{ backgroundColor: bondColor}"/>
+          <contract-data label="Bonds" v-if="mode!='color'" :value="yourBonds" :img="bondsIcon"/>
           <contract-data label="ETH Value" :value="yourBondValue" :img="ethIcon" />
           <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon" v-if="mode!='color'"/>
           <contract-data label="Your Hodl" :value="yourHodl" :img="clockIcon" />

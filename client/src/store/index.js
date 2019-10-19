@@ -203,9 +203,6 @@ export const store = new Vuex.Store({
             let resolves = bigR.toFixed(9)
             commit("update_yourStakedResolves", resolves )
           })
-          colorAPI.proxyAddress(state.currentAddress).call().then( (r)=>{
-            relativeAddress = r
-          })
 
           powhrAPI.avgFactor_buyInTimeSum(relativeAddress).call().then( (r)=>{
             powhrAPI.avgFactor_ethSpent(relativeAddress).call().then( (r2)=>{
@@ -230,6 +227,9 @@ export const store = new Vuex.Store({
           })
 
           if(state.mode=="color"){
+            colorAPI.proxyAddress(state.currentAddress).call().then( (r)=>{
+              relativeAddress = r
+            })
             /*colorAPI.RGB_resolveRatio(state.currentAddress).call().then( (r)=>{
               let bigR = Big(r.toString())
               bigR = bigR.div(1e18)
