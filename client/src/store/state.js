@@ -1,5 +1,5 @@
 let state = {
-  mode:"color",
+  mode:"",
   rpcActive:false,
   currentAddress: null,
   proxyAddress: null,

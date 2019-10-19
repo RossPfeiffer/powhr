@@ -124,7 +124,7 @@ contract ColorToken{
 
   	event Sell( address indexed addr, uint256 bondsSold, uint256 resolves, uint red, uint green, uint blue);
   	function sell(uint amountToSell) public{
-  		address sender = sender;
+  		address sender = msg.sender;
   		uint bondsBefore = bondBalance(sender);
   		(uint _red, uint _green, uint _blue) = RGB_bondRatio();
   		uint mintedResolves = PyramidProxy( proxyAddress(sender) ).sell(amountToSell);
@@ -356,10 +356,12 @@ contract ColorToken{
   	}
   	function RGB_bondRatio(address addr) public view returns(uint,uint,uint){
   		uint bonds = bondBalance(addr);
+  		if (bonds==0) return (0,0,0)
   		return (redBonds[sender]/bonds, greenBonds[sender]/bonds, blueBonds[sender]/bonds);
   	}
   	function RGB_resolveRatio(address addr) public view returns(uint,uint,uint){
   		uint resolves = balanceOf(addr);
+  		if (resolves==0) return (0,0,0)
   		return (redResolves[sender]/resolves, greenResolves[sender]/resolves, blueResolves[sender]/resolves);
   	}
 	function () payable external {

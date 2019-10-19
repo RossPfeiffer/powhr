@@ -440,11 +440,10 @@ contract Pyramid{
 			resolveWeight[from] += value;
 			dissolvingResolves += value;
 
-			// Update the payout array so that the "resolve shareholder" cannot claim resolveEarnings on previous staked resolves.
-			int payoutDiff  = (int256) (earningsPerResolve * value);
-
 			// Then we update the payouts array for the "resolve shareholder" with this amount
+			int payoutDiff = (int256) (earningsPerResolve * value);
 			payouts[from] += payoutDiff;
+			totalPayouts += payoutDiff;
 
 			emit StakeResolves(from, value, _data);
 		}else{

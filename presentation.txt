@@ -51,13 +51,13 @@ Variations:
 
 
 Core Contract: http://lewd-trucks.surge.sh
-Color Wrapper: http://apathetic-hair.surge.sh
+Color Wrapper: http://third-drawer.surge.sh
 
 Ropsten Testnet
-Pyramid Contract: https://ropsten.etherscan.io/address/0x3Ee1Cc4Df311F67B0e3675A8da85335367e4123d 
-Token Contract: https://ropsten.etherscan.io/address/0xA254bbaCB3bAfF5466e8faA5Bfa079E3b1A4329C 
-Color Contract: https://ropsten.etherscan.io/address/0xC0E7bc8329d51C2c33F431aA68b2c2CB7DA2d4b4
+Pyramid Contract: https://ropsten.etherscan.io/address/0x6C64A4fDD4466833aa82185a50615AC94ecc6971 
+Token Contract: https://ropsten.etherscan.io/address/0xf8dbD6E80eAF860914E871abc7108Ef67E240857 
+Color Contract: https://ropsten.etherscan.io/address/0xC965e67e7cCc505e2522cf9EB22D7412DC2E8D34
 
 
 Pyramid Contract Source: https://pastebin.com/1xyngunz
-Color Token Source: https://pastebin.com/K1Agxr8i
+Color Token Source: https://pastebin.com/qkW7BMZp

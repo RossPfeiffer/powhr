@@ -203,40 +203,19 @@ export const store = new Vuex.Store({
             let resolves = bigR.toFixed(9)
             commit("update_yourStakedResolves", resolves )
           })
-
-          powhrAPI.avgFactor_buyInTimeSum(relativeAddress).call().then( (r)=>{
-            powhrAPI.avgFactor_ethSpent(relativeAddress).call().then( (r2)=>{
-              powhrAPI.NOW().call().then( (r3)=>{
-                if(r2 > 0){
-                  let seconds = (r3-(r/0x10000000000000000)/r2);
-                  let hodl = hodlConvert(seconds)
-                  //console.log("Your Hodl",hodl.hours + ' H ' +hodl.minutes + ' M' )
-                  commit("update_yourHodl", hodl.hours + ' H ' +hodl.minutes + ' M' )
-                }else{
-                  commit("update_yourHodl",'N/A' )
-                }
-              })
-            })
-          })
-
-          powhrAPI.resolveEarnings(relativeAddress).call().then( (r)=>{
-            let bigR = Big(r.toString())
-            bigR = bigR.div(1e18)
-            let numeric = bigR.toFixed(6)
-            commit("update_yourEarnings", numeric )
-          })
-
+          
           if(state.mode=="color"){
+            if(relativeAddress != "0x0000000000000000000000000000000000000000")
             colorAPI.proxyAddress(state.currentAddress).call().then( (r)=>{
               relativeAddress = r
             })
-            /*colorAPI.RGB_resolveRatio(state.currentAddress).call().then( (r)=>{
-              let bigR = Big(r.toString())
-              bigR = bigR.div(1e18)
-              let numeric = bigR.toFixed(6)
-              console.log("resolve RGB",r)
-              //commit("update_yourEarnings", numeric )
-            })*/  
+            colorAPI.RGB_resolveRatio(state.currentAddress).call().then( (r)=>{
+              let red = (parseInt(r[0]) / 1e12)*255
+              let green = (parseInt(r[1]) / 1e12)*255
+              let blue = (parseInt(r[2]) / 1e12)*255
+              console.log(red,green,blue)
+              commit("update_bondColor", numeric )
+            })  
             /*colorAPI.RGB_bondRatio(state.currentAddress).call().then( (r)=>{
               let bigR = Big(r.toString())
               bigR = bigR.div(1e18)
@@ -261,24 +240,48 @@ export const store = new Vuex.Store({
             commit("update_resolveFee",  ( asdf ).toFixed(2)+"%" )
           })/**/
           
-          console.log("relativeAddress",relativeAddress)
-          powhrAPI.balanceOf(relativeAddress).call().then( (r)=>{
-            let bigR = Big(r.toString())
-            bigR = bigR.div(1e12)
-            let bonds = bigR.toFixed(2)
-            commit("update_yourBonds", bonds )
-            powhrAPI.getEtherForBonds( r ).call().then( (rr)=>{
-              commit("update_yourBondValue",eth.convertWeiToEth( eth.int( rr*(1-asdf/100) ) )                
-              .toFixed(5).toString())
+          //console.log("relativeAddress",relativeAddress)
+          if(relativeAddress != "0x0000000000000000000000000000000000000000"){
+            powhrAPI.balanceOf(relativeAddress).call().then( (r)=>{
+              let bigR = Big(r.toString())
+              bigR = bigR.div(1e12)
+              let bonds = bigR.toFixed(2)
+              commit("update_yourBonds", bonds )
+              powhrAPI.getEtherForBonds( r ).call().then( (rr)=>{
+                commit("update_yourBondValue",eth.convertWeiToEth( eth.int( rr*(1-asdf/100) ) )                
+                .toFixed(5).toString())
+              })
             })
-          })
 
-          tokenAPI.balanceOf(relativeAddress).call().then( (r)=>{
-            let bigR = Big(r.toString())
-            bigR = bigR.div(1e18)
-            let resolves = bigR.toFixed(9)
-            commit("update_yourResolves", resolves)
-          })
+            tokenAPI.balanceOf(relativeAddress).call().then( (r)=>{
+              let bigR = Big(r.toString())
+              bigR = bigR.div(1e18)
+              let resolves = bigR.toFixed(9)
+              commit("update_yourResolves", resolves)
+            })
+
+            powhrAPI.avgFactor_buyInTimeSum(relativeAddress).call().then( (r)=>{
+              powhrAPI.avgFactor_ethSpent(relativeAddress).call().then( (r2)=>{
+                powhrAPI.NOW().call().then( (r3)=>{
+                  if(r2 > 0){
+                    let seconds = (r3-(r/0x10000000000000000)/r2);
+                    let hodl = hodlConvert(seconds)
+                    //console.log("Your Hodl",hodl.hours + ' H ' +hodl.minutes + ' M' )
+                    commit("update_yourHodl", hodl.hours + ' H ' +hodl.minutes + ' M' )
+                  }else{
+                    commit("update_yourHodl",'N/A' )
+                  }
+                })
+              })
+            })
+
+            powhrAPI.resolveEarnings(relativeAddress).call().then( (r)=>{
+              let bigR = Big(r.toString())
+              bigR = bigR.div(1e18)
+              let numeric = bigR.toFixed(6)
+              commit("update_yourEarnings", numeric )
+            })
+          }
         }
       },1000)
     },
