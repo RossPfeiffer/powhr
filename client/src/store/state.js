@@ -29,9 +29,9 @@ let state = {
   avgHodlRelease:'0',
   yourHodl:'0',
   collectiveCurrentHodl:'0',
-  bondColor:"#ff88ff",
-  resolveColor:"#88ffff",
+  bondColor:"#ffffff",
+  resolveColor:"#ffffff",
   pyramidGateway:"0x000",
-  buyColor:"#e8f7ca"
+  buyColor:"#888888"
 }
 export default state

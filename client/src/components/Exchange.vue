@@ -28,6 +28,7 @@
           <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon" v-if="mode!='color'"/>
           <contract-data label="Your Hodl" :value="yourHodl" :img="clockIcon" />
         </div>
+        <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon"  v-if="mode=='color'" v-bind:style="{ backgroundColor: resolveColor}"/>
         <!--<div class="gap"><div class="color-indicator" v-bind:style="{ backgroundColor: bondColor}"><img :src="bondsIcon"/>Bonds</div></div>-->
     </control-box>
     <control-box id="" title="Sell">
@@ -38,13 +39,12 @@
       <contract-data label="Estimated Resolves" :value="estimatedResolves" />
     </control-box>
     <control-box id="" title="Resolve">
-      <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon"  v-if="mode=='color'" v-bind:style="{ backgroundColor: resolveColor}"/>
       <!--<div v-if="mode=='color'" class="gap"><div class="color-indicator" v-bind:style="{ backgroundColor: resolveColor}"><img :src="resolveIcon"/>Resolves</div></div>-->
       <contract-data label="Resolves Staking" :value="yourStakedResolves" :img="resolveIcon"/>
       <contract-input label="Stake Resolves" placeholder="e.g. 1200" commit="resolvesToStake"/>
       <contract-button action="stakeResolves">Stake Resolves</contract-button>
-      <contract-input v-if="mode!='color'" label="Pull Resolves" placeholder="e.g. 1200" commit="resolvesToPull"/>
-      <contract-button v-if="mode!='color'" action="pullResolves">Pull Resolves</contract-button>
+      <contract-input label="Pull Resolves" placeholder="e.g. 1200" commit="resolvesToPull"/>
+      <contract-button action="pullResolves">Pull Resolves</contract-button>
     </control-box>
     <control-box id="" title="Earnings">
       <contract-data label="ETH Dividends " :value="yourEarnings" :img="ethIcon"/>

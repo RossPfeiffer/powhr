@@ -88,20 +88,20 @@ contract Pyramid{
 	function reinvestEarnings(uint amountFromEarnings) public returns(uint,uint){
 		address sender = msg.sender;
 		// Retrieve the resolveEarnings associated with the address the request came from.		
-		uint totalEarnings = resolveEarnings(sender);
+		uint upScaleDivs = (uint)((int256)( earningsPerResolve * resolveWeight[sender] ) - payouts[sender]);
+		uint totalEarnings = upScaleDivs / scaleFactor;//resolveEarnings(sender);
 		require(amountFromEarnings <= totalEarnings, "the amount exceeds total earnings");
 		uint oldWeight = resolveWeight[sender];
-		resolveWeight[sender] = oldWeight *  (totalEarnings - amountFromEarnings) / totalEarnings;
+		resolveWeight[sender] = oldWeight * (totalEarnings - amountFromEarnings) / totalEarnings;
 		uint weightDiff = oldWeight * amountFromEarnings / totalEarnings;
 		dissolved += weightDiff;
 		dissolvingResolves -= weightDiff;
-
-		// For maintaing payout invariance
-		int resolvePayoutDiff  = (int256) (earningsPerResolve * weightDiff);
-
-		payouts[sender] += resolvePayoutDiff;
-
-		earningsOffset -= resolvePayoutDiff;
+		
+		// something about invariance
+		int withdrawnEarnings = (int)(upScaleDivs * amountFromEarnings / totalEarnings);
+		payouts[sender] += withdrawnEarnings - (int)(weightDiff*earningsPerResolve);
+		// Increase the total amount that's been paid out to maintain invariance.
+		earningsOffset += withdrawnEarnings;
 
 		// Assign balance to a new variable.
 		uint value_ = (uint) (amountFromEarnings);
@@ -458,21 +458,21 @@ contract Pyramid{
 	function withdraw(uint amount) public returns(uint){
 		address payable sender = msg.sender;
 		// Retrieve the resolveEarnings associated with the address the request came from.
-		uint totalEarnings = resolveEarnings(sender);
+		uint upScaleDivs = (uint)((int256)( earningsPerResolve * resolveWeight[sender] ) - payouts[sender]);
+		uint totalEarnings = upScaleDivs / scaleFactor;//resolveEarnings(sender);
 		require(amount <= totalEarnings, "the amount exceeds total earnings");
 		uint oldWeight = resolveWeight[sender];
 		resolveWeight[sender] = oldWeight * (totalEarnings - amount) / totalEarnings;
 		uint weightDiff = oldWeight * amount / totalEarnings;
 		dissolved += weightDiff;
 		dissolvingResolves -= weightDiff;
-
-		//something about invariance
-		int resolvePayoutDiff  = (int256) (earningsPerResolve * weightDiff);
-
-		payouts[sender] += resolvePayoutDiff;
-
+		
+		// something about invariance
+		int withdrawnEarnings = (int)(upScaleDivs * amount / totalEarnings);
+		payouts[sender] += withdrawnEarnings - (int)(weightDiff*earningsPerResolve);//something needs to be added here
 		// Increase the total amount that's been paid out to maintain invariance.
-		earningsOffset -= resolvePayoutDiff;
+		earningsOffset += withdrawnEarnings;
+
 		contractBalance -= amount;
 
 		// Send the resolveEarnings to the address that requested the withdraw.
@@ -485,13 +485,13 @@ contract Pyramid{
 		address sender = msg.sender;
 		uint resolves = resolveWeight[sender];
 		require(amount <= resolves, "that amount is too large");
-		require(amount != dissolvingResolves, "you can't forfeit the last amount");
+		require(amount <= dissolvingResolves, "you can't forfeit the last amount");
 
-		int256 allEarnings = (int256)(resolves * earningsPerResolve) - payouts[sender];
-		uint forfeitedEarnings = (uint)( (int256)(amount * earningsPerResolve) / allEarnings );
+		uint allEarnings = (uint)((int256)(resolves * earningsPerResolve) - payouts[sender]);
+		uint forfeitedEarnings = allEarnings * amount / resolves;//(uint)( (int256)(amount * earningsPerResolve) / allEarnings );
 
 		// Update the payout array so that the "resolve shareholder" cannot claim resolveEarnings on previous staked resolves.
-		payouts[sender] += (int256)(forfeitedEarnings);
+		payouts[sender] += (int256)(forfeitedEarnings) - (int256)(earningsPerResolve * amount);
 
 		resolveWeight[sender] -= amount;
 		dissolvingResolves -= amount;

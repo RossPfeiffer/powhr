@@ -54,10 +54,9 @@ Core Contract: http://prismtokenomics.com/#/contract
 Color Wrapper: http://young-government.surge.sh/#/contract
 
 Ropsten Testnet
-Pyramid Contract: https://ropsten.etherscan.io/address/0x6C64A4fDD4466833aa82185a50615AC94ecc6971 
-Token Contract: https://ropsten.etherscan.io/address/0xf8dbD6E80eAF860914E871abc7108Ef67E240857 
-Color Contract: https://ropsten.etherscan.io/address/0xC965e67e7cCc505e2522cf9EB22D7412DC2E8D34
-
+Pyramid Contract: https://ropsten.etherscan.io/address/0x390cab9E58541Ad89eecb5A473B3C039b1C21D65 
+Token Contract: https://ropsten.etherscan.io/address/0xa23a23a911B77e6aB12305C1144ca9ea50DE4e6c 
+Color Contract: https://ropsten.etherscan.io/address/0xe139e41d596Db7187425F290c6dF76a079054cB6
 
 Pyramid Contract Source: https://github.com/Econymous/powhr/blob/master/smart-contract/powhr.sol
 Color Token Source: https://github.com/Econymous/powhr/blob/master/smart-contract/ColorToken.sol
