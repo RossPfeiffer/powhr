@@ -1,4 +1,4 @@
-pragma solidity ^ 0.5.11;
+pragma solidity ^ 0.5.12;
 contract Pyramid{
 	// scaleFactor is used to convert Ether into bonds and vice-versa: they're of different
 	// orders of magnitude, hence the need to bridge between the two.
@@ -55,7 +55,6 @@ contract Pyramid{
 	// Variable tracking how much Ether each token is currently worth.
 	// Note that this is scaled by the scaleFactor variable.
 	uint256 earningsPerResolve;
-	uint remainderForDividends;
 
 	//The resolve token contract
 	ResolveToken public resolveToken;
@@ -98,8 +97,8 @@ contract Pyramid{
 		dissolvingResolves -= weightDiff;
 		
 		// something about invariance
-		int withdrawnEarnings = (int)(upScaleDivs * amountFromEarnings / totalEarnings);
-		payouts[sender] += withdrawnEarnings - (int)(weightDiff*earningsPerResolve);
+		int withdrawnEarnings = (int)(upScaleDivs * amountFromEarnings / totalEarnings) - (int)(weightDiff*earningsPerResolve);
+		payouts[sender] += withdrawnEarnings;
 		// Increase the total amount that's been paid out to maintain invariance.
 		earningsOffset += withdrawnEarnings;
 
@@ -190,10 +189,10 @@ contract Pyramid{
     }
 
     // For calculating the price 
-	function getPriceForBonds(uint256 bonds, bool upDown) public view returns (uint256 price) {
+	function getPriceForBonds(uint256 bonds, bool buy_or_sell) public view returns (uint256 price) {
 		uint reserveAmount = reserve();
 
-		if(upDown){
+		if(buy_or_sell){
 			uint x = fixedExp((fixedLog(_totalSupply + bonds) - price_coeff) * crr_d/crr_n);
 			return x - reserveAmount;
 		}else{
@@ -468,8 +467,8 @@ contract Pyramid{
 		dissolvingResolves -= weightDiff;
 		
 		// something about invariance
-		int withdrawnEarnings = (int)(upScaleDivs * amount / totalEarnings);
-		payouts[sender] += withdrawnEarnings - (int)(weightDiff*earningsPerResolve);//something needs to be added here
+		int withdrawnEarnings = (int)(upScaleDivs * amount / totalEarnings) - (int)(weightDiff*earningsPerResolve);
+		payouts[sender] += withdrawnEarnings;
 		// Increase the total amount that's been paid out to maintain invariance.
 		earningsOffset += withdrawnEarnings;
 
@@ -483,7 +482,7 @@ contract Pyramid{
 	event PullResolves( address indexed addr, uint256 pulledResolves, uint256 forfeiture);
 	function pullResolves(uint amount) public{
 		address sender = msg.sender;
-		uint resolves = resolveWeight[sender];
+		uint resolves = resolveWeight[ sender ];
 		require(amount <= resolves, "that amount is too large");
 		require(amount <= dissolvingResolves, "you can't forfeit the last amount");
 
@@ -492,21 +491,22 @@ contract Pyramid{
 
 		// Update the payout array so that the "resolve shareholder" cannot claim resolveEarnings on previous staked resolves.
 		payouts[sender] += (int256)(forfeitedEarnings) - (int256)(earningsPerResolve * amount);
+		earningsOffset -= (int256)(earningsPerResolve * amount);
 
 		resolveWeight[sender] -= amount;
 		dissolvingResolves -= amount;
 		// The Ether value per token is increased proportionally.
 		earningsPerResolve += forfeitedEarnings / dissolvingResolves;
-		resolveToken.transfer(sender, amount);
+		resolveToken.transfer( sender, amount );
 		emit PullResolves( sender, amount, forfeitedEarnings / scaleFactor);
 	}
 
 	event BondTransfer(address from, address to, uint amount);
-	function bondTransfer( address to, uint amount ) public{
+	function bondTransfer( address to, uint amount ) public {
 		//attack someone's resolve potential by sending them some love
 		address sender = msg.sender;
 		uint totalBonds = hodlBonds[sender];
-		require(amount <= totalBonds, "amount exceeds hodlBonds");
+		require(amount <= totalBonds, "amount exceeds hodlBonds" );
 		uint ethSpent = avgFactor_ethSpent[sender] * amount / totalBonds;
 		uint buyInTimeSum = avgFactor_buyInTimeSum[sender] * amount / totalBonds;
 		avgFactor_ethSpent[sender] -= ethSpent;
