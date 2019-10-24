@@ -32,6 +32,10 @@ let state = {
   bondColor:"#ffffff",
   resolveColor:"#ffffff",
   pyramidGateway:"0x000",
-  buyColor:"#888888"
+  buyColor:"#888888",
+  yourSuggestedMR:"0",
+  yourCandidate:"0x000",
+  masternodeRequirement:"0",
+  communityResolve:"0x000"
 }
 export default state

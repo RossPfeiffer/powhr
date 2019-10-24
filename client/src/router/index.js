@@ -14,6 +14,11 @@ export default new Router({
       component: Home
     },
     {
+      path: '/contract/:masternode',
+      name: 'Contract',
+      component: Contract
+    },
+    {
       path: '/contract',
       name: 'Contract',
       component: Contract

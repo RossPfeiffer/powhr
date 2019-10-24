@@ -3,19 +3,21 @@
     <nav-menu></nav-menu>
     <div id="exchange-page">
       <header id="heeedddd">
-        <h1>TESTNET</h1>
-        <!--<div id="contract-nav">
+        <h1>Color Exchange</h1>
+        <div id="contract-nav" v-if="mode=='color'">
           <button v-bind:class="{ selected: (tab == 0) }" @click="tabSelect(0)">Exchange</button>
           <button v-bind:class="{ selected: (tab == 1) }" @click="tabSelect(1)">DAO</button>
-          <button v-bind:class="{ selected: (tab == 2) }" @click="tabSelect(2)">Stats</button>
+          <!--<button v-bind:class="{ selected: (tab == 2) }" @click="tabSelect(2)">Stats</button>-->
         </div>
-        <div class="clear"></div>-->
+        <div class="clear"></div>
       </header>
       <metamask-gateway>
         <exchange v-if="tab==0"/>
         <d-a-o v-if="tab==1"/>
         <stats v-if="tab==2"/>
       </metamask-gateway>
+
+        <h2><center>{{$route.params.masternode}}</center></h2>
     </div>
     <footer><a :href="'https://ropsten.etherscan.io/address/'+powhrAddress" target="_blank">Pyramid Contract</a> | <a :href="'https://ropsten.etherscan.io/address/'+tokenAddress" target="_blank">Resolve Contract</a> | <a :href="'https://ropsten.etherscan.io/address/'+colorAddress" target="_blank">Color Contract</a></footer>
   </div>
@@ -23,6 +25,7 @@
 <script>
 import Chart from 'chart.js';
 
+import { mapState } from 'vuex'
 import MetamaskGateway from '@/components/Metamask-Gateway'
 import Exchange from '@/components/Exchange'
 import DAO from '@/components/DAO'
@@ -56,6 +59,11 @@ export default {
     DAO,
     Stats,
     MetamaskGateway
+  },
+  computed:{
+    ...mapState([
+      "mode"
+    ])
   }
 }
 </script>

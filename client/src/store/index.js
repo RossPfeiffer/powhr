@@ -61,6 +61,7 @@ export const store = new Vuex.Store({
       window._events = resolveContract;
       _events.getPastEvents("allEvents",{fromBlock:5742328}).then(function(r){console.log(r)})
     },
+    update_currentAddress(state,value){state.currentAddress = value},
     update_resolveTokenAddress(state,value){state.resolveAddress = value},
     update_ethToSpend(state,value){state.ethToSpend = value},
     update_bondsToSell(state,value){state.bondsToSell = value},
@@ -99,6 +100,12 @@ export const store = new Vuex.Store({
     update_buyColor(state,value){state.buyColor = value},
     rpcActivate(state){console.log("LIVE UPDATES COMING IN")
       state.rpcActive = true},
+    update_yourSuggestedMR(state,value){state.yourSuggestedMR = value;},
+    update_yourCandidate(state,value){state.yourCandidate = value;},
+    update_masternodeRequirement(state,value){state.masternodeRequirement = value;},
+    update_communityResolve(state,value){state.communityResolve = value;},
+    update_inputMR(state,value){state.inputMR = value;},
+    update_inputCR(state,value){state.inputCR = value;},
   },
   actions: {
     connectToMetaMask: async ({commit, dispatch,state}) => {
@@ -166,8 +173,24 @@ export const store = new Vuex.Store({
     },
     updateCycle: async({commit,dispatch,state})=>{
       setInterval(function(){
-        if(state.rpcActive) { /**/
-          
+        if(state.currentAddress != web3.eth.givenProvider.selectedAddress){
+          commit('update_currentAddress',web3.eth.givenProvider.selectedAddress)          
+          commit("update_resolveColor", rgbToHex(255,255,255) )
+          commit("update_bondColor", rgbToHex(255,255,255) )
+        }
+        if(state.rpcActive) {
+          powhrAPI.reserve().call().then( (r)=>{
+            commit("update_ethInReserve", eth.convertWeiToEth( eth.int(r) )
+            .toFixed(5).toString())
+          })
+          powhrAPI.pricing(1e12+"").call().then( (r)=>{
+            commit( "update_buyPrice", (r[0]/1e18).toFixed(9) )
+            commit( "update_sellPrice", (r[1]/1e18).toFixed(9) )
+            asdf = eth.int(r[2])/1e10
+            commit("update_resolveFee",  ( asdf ).toFixed(2)+"%" )
+          })/**/
+
+
           if(state.mode!="color"){
             powhrAPI.totalSupply().call().then( (r)=>{
               let bigR = Big(r.toString())
@@ -176,20 +199,31 @@ export const store = new Vuex.Store({
               commit("update_totalBondSupply", bonds)
             }).catch( err )   
           }else{
-            colorAPI._totalBonds().call().then( (r)=>{
-              let bigR = Big(r.toString())
-              bigR = bigR.div(1e12)
-              let bonds = bigR.toFixed(2)
+            colorAPI.getData("0x0000000000000000000000000000000000000000","-1").call().then( (r)=>{
+              let bonds = Big(r[3].toString()).div(1e12).toFixed(2)
+              let MR = Big(r[5].toString()).div(1e12).toFixed(2)
+              let CR = r[2]
               commit("update_totalBondSupply", bonds)
+              commit("update_masternodeRequirement", MR)
+              commit("update_communityResolve", CR)
             }).catch( err )
           }
+
+          colorAPI.getData(state.currentAddress,"0").call().then( (r)=>{
+            let MR = Big(r[5].toString()).div(1e12).toFixed(4)
+            let CR = r[2]
+            commit("update_yourSuggestedMR", MR)
+            commit("update_yourCandidate", CR)
+          }).catch( err )
           /*powhrAPI.poolFunds().call().then( (r)=>{
             let bigR = Big(r.toString())
             bigR = bigR.div(1e18)
             let funds = bigR.toFixed(4)
             commit("update_poolFunds", funds)
+          })
+          powhrAPI.reserve().call().then( (r)=>{
+            console.log("++++++",r)
           })*/
-          
           powhrAPI.sellSum().call().then( (ss)=>{
             if (ss>0){
               powhrAPI.avgHodl().call().then( (r)=>{
@@ -204,10 +238,6 @@ export const store = new Vuex.Store({
             }else{commit("update_avgHodlRelease", "N/A")}
           })
           
-          powhrAPI.reserve().call().then( (r)=>{
-            commit("update_ethInReserve", eth.convertWeiToEth( eth.int(r) )
-            .toFixed(5).toString())
-          })
           
           powhrAPI.resolveWeight(relativeAddress).call().then( (r)=>{
             let bigR = Big(r.toString())
@@ -215,11 +245,13 @@ export const store = new Vuex.Store({
             let resolves = bigR.toFixed(9)
             commit("update_yourStakedResolves", resolves )
           })/**/
+          
 
           if(state.mode=="color"){
             colorAPI.proxyAddress(state.currentAddress).call().then( (r)=>{
               relativeAddress = r
             })
+
             colorAPI.RGB_resolveRatio(state.currentAddress).call().then( (r)=>{
               let red = parseInt((parseInt(r[0]) / 1e18)*255)
               let green = parseInt((parseInt(r[1]) / 1e18)*255)
@@ -238,7 +270,10 @@ export const store = new Vuex.Store({
               
               if(parseFloat(state.yourBonds)>0)
               commit("update_bondColor", rgbToHex(red,green,blue) )
-            })/**/  
+            })/**/
+            colorAPI.RGB_bondRatio(state.currentAddress).call().then( (r)=>{
+
+            })  
             /*colorAPI.RGB_bondRatio(state.currentAddress).call().then( (r)=>{
               let bigR = Big(r.toString())
               bigR = bigR.div(1e18)
@@ -254,16 +289,9 @@ export const store = new Vuex.Store({
             bigR = bigR.div(1e18)
             let resolves = bigR.toFixed(4)
             commit("update_totalStakedResolves", resolves )
-          })
-          
-          powhrAPI.pricing(1e12+"").call().then( (r)=>{
-            commit( "update_buyPrice", (r[0]/1e18).toFixed(9) )
-            commit( "update_sellPrice", (r[1]/1e18).toFixed(9) )
-            asdf = eth.int(r[2])/1e10
-            commit("update_resolveFee",  ( asdf ).toFixed(2)+"%" )
           })/**/
           
-          console.log("relativeAddress",relativeAddress)
+          //console.log("relativeAddress",relativeAddress)
           if(relativeAddress != "0x0000000000000000000000000000000000000000"){
             powhrAPI.balanceOf(relativeAddress).call().then( (r)=>{
               let bigR = Big(r.toString())
@@ -273,7 +301,7 @@ export const store = new Vuex.Store({
               powhrAPI.getEtherForBonds( r ).call().then( (rr)=>{
                 commit("update_yourBondValue",eth.convertWeiToEth( eth.int( rr*(1-asdf/100) ) )                
                 .toFixed(5).toString())
-              })
+              })/**/
             })
 
             tokenAPI.balanceOf(relativeAddress).call().then( (r)=>{
@@ -326,7 +354,7 @@ export const store = new Vuex.Store({
         let bigB = parseInt(Big(1e12).mul(rgb.b).div(255)).toString()
         console.log("____ COLORS RBG ____")
         console.log(bigR,bigG,bigB)
-        API = colorAPI.buy(bigR,bigG,bigB,"0x0000000000000000000000000000000000000000")
+        API = colorAPI.buy(state.currentAddress,bigR,bigG,bigB,"0x0000000000000000000000000000000000000000")
         address = colorAddress
       }else{
         API = powhrAPI.fund()
@@ -344,7 +372,7 @@ export const store = new Vuex.Store({
     sellBonds: ({commit, dispatch, state})=>{
       let address, API;
       if(state.mode=="color"){
-        API = colorAPI.sell( weiForm( parseFloat(state.bondsToSell)/1e6+"" ) )
+        API = colorAPI.publix("0", weiForm( parseFloat(state.bondsToSell)/1e6+"" ) )
         address = colorAddress
       }else{
         API = powhrAPI.sellBonds( weiForm( parseFloat(state.bondsToSell)/1e6+"" ) )
@@ -371,15 +399,16 @@ export const store = new Vuex.Store({
 
       if (Number.isNaN(number)) number = 0
       if (number > 0){
-        let x = parseFloat(state.ethToSpend) * ( 1 - asdf/100 ) +''
+        let ETS = parseFloat(state.ethToSpend);
+        if(state.mode=="color"){
+            ETS *= 0.9
+        }
+        let x = ETS * ( 1 - asdf/100 ) +''
         powhrAPI.getBondsForEther( weiForm( x ) ).call().then( (r)=>{
           console.log("What the contract gives back")
           console.log(r)
           let bigR = Big( r.toString() )
           bigR = bigR.div(1e18/1e6)
-          if(state.mode=="color"){
-            bigR = bigR.mul(0.9)
-          }
           let bonds = bigR.toFixed(2)
           commit("update_estimatedBonds", bonds)
         })
@@ -408,7 +437,7 @@ export const store = new Vuex.Store({
     stakeResolves: async({commit, dispatch, state})=>{
       let address, API;
       if(state.mode=="color"){
-        API = colorAPI.stake( weiForm(state.resolvesToStake) )
+        API = colorAPI.publix("1", weiForm(state.resolvesToStake) )
         address = colorAddress
       }else{
         API = tokenAPI.transfer(powhrAddress, weiForm(state.resolvesToStake) )
@@ -425,11 +454,11 @@ export const store = new Vuex.Store({
     pullResolves: async({commit, dispatch, state})=>{
       let address, API;
       if(state.mode=="color"){
-        API = colorAPI.unstake( weiForm(state.resolvesToPull) )
+        API = colorAPI.publix("2", weiForm(state.resolvesToPull) )
         address = colorAddress
       }else{
         API = powhrAPI.pullResolves( weiForm(state.resolvesToPull) )
-        address = tokenAddress
+        address = powhrAddress
       }
       web3.eth.sendTransaction({
         from: state.currentAddress,
@@ -442,7 +471,7 @@ export const store = new Vuex.Store({
     withdrawEarnings: async({commit, dispatch, state})=>{
       let address, API;
       if(state.mode=="color"){
-        API = colorAPI.withdraw(weiForm(state.earningsToPull))
+        API = colorAPI.publix("4",weiForm(state.earningsToPull))
         address = colorAddress
       }else{
         API = powhrAPI.withdraw( weiForm(state.earningsToPull) )
@@ -459,7 +488,7 @@ export const store = new Vuex.Store({
     reinvestEarnings: async({commit, dispatch, state})=>{
       let address, API;
       if(state.mode=="color"){
-        API = colorAPI.reinvest(weiForm(state.earningsToReinvest))
+        API = colorAPI.publix("3",weiForm(state.earningsToReinvest))
         address = colorAddress
       }else{
         API = powhrAPI.reinvestEarnings( weiForm(state.earningsToReinvest) )
@@ -469,6 +498,24 @@ export const store = new Vuex.Store({
         from: state.currentAddress,
         to: address,
         data: API.encodeABI()
+      },(e,hash)=>{
+        err(e)
+      });
+    },
+    voteForCR: async({commit, dispatch, state})=>{
+      web3.eth.sendTransaction({
+        from: state.currentAddress,
+        to: colorAddress,
+        data: colorAPI.setVotingForCR( state.inputCR ).encodeABI()
+      },(e,hash)=>{
+        err(e)
+      });
+    },
+    voteForMR: async({commit, dispatch, state})=>{
+      web3.eth.sendTransaction({
+        from: state.currentAddress,
+        to: colorAddress,
+        data: colorAPI.publix( 5, weiForm(state.inputMR) ).encodeABI()
       },(e,hash)=>{
         err(e)
       });

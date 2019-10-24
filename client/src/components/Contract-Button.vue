@@ -31,5 +31,7 @@ button{
   position: relative;
   cursor: pointer;
   text-decoration: none;
+  display: inline-block;
+  width:125px;
 }
 </style>

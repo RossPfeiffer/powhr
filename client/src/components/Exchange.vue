@@ -146,7 +146,7 @@
   height: 24px;
   display: block;
   left:110px;
-  transform: translate(0px,-36px);
+  transform: translate(56px,-37px);
   position: absolute;
 }
 #color-box .color-modal{
