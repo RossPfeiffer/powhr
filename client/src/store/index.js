@@ -8,13 +8,15 @@ import _tokenInterface from './tokenInterface'
 import tokenAddress from './tokenAddress'
 import _colorInterface from './colorInterface'
 import colorAddress from './colorAddress'
+import _rnsInterface from './rnsInterface'
+import rnsAddress from './rnsAddress'
 import Web3 from 'web3'
 import hodlConvert from 'convert-seconds';
 
 
 var web3, BN;
 
-var powhrAPI, tokenAPI, resolveContract, tokenContract, colorAPI, colorContract, relativeAddress
+var powhrAPI, tokenAPI, resolveContract, tokenContract, colorAPI, colorContract, relativeAddress, rnsAPI, rnsContract
 
 var Big = require('big.js')
 var asdf = 0;
@@ -27,7 +29,13 @@ function componentToHex(c) {
 function rgbToHex(r, g, b) {
   return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
-
+function ensureAddress(a){
+  if ( web3.utils.isAddress(a) ){
+    return a
+  }else{
+    return state.currentAddress
+  }
+}
 //alert(rgbToHex(0, 51, 255)); // #0033ff
 
 
@@ -54,9 +62,12 @@ export const store = new Vuex.Store({
       resolveContract = _powhrInterface.init(web3)
       colorContract = _colorInterface.init(web3)
       tokenContract = _tokenInterface.init(web3)
+      rnsContract = _rnsInterface.init(web3)
+
       powhrAPI = resolveContract.methods
       tokenAPI = tokenContract.methods
       colorAPI = colorContract.methods
+      rnsAPI = rnsContract.methods
 
       window._events = resolveContract;
       _events.getPastEvents("allEvents",{fromBlock:5742328}).then(function(r){console.log(r)})
@@ -106,69 +117,89 @@ export const store = new Vuex.Store({
     update_communityResolve(state,value){state.communityResolve = value;},
     update_inputMR(state,value){state.inputMR = value;},
     update_inputCR(state,value){state.inputCR = value;},
+    update_yourReffEarnings(state,value){state.yourReffEarnings = value;},
+    update_communityFund(state,value){state.communityFund = value;},
+    update_yourGateway(state,value){state.yourGateway = value;},
+    update_urlGateway(state,value){state.urlGateway = value;},
+    update_rnsName(state,value){state.rnsName = value;},
+    update_rnsCandidate(state,value){state.rnsCandidate = value;},
+    update_lockAmount(state,value){state.lockAmount = value;},
+    update_unlockedResolves(state,value){state.unlockedResolves = value;},
+    update_nameList(state,value){
+      //state.unlockedResolves = value;
+      Vue.set(state, "nameList", value)
+    },
+    update_resolveNamingService(state,value){state.resolveNamingService = value;},
+    
+    //update_unlockedResolves
   },
   actions: {
     connectToMetaMask: async ({commit, dispatch,state}) => {
-        let metamask = false
-        let provider
+      let metamask = false
+      let provider
 
-        try{
-          await ethereum.enable().then(function(){
-            provider = window.web3.currentProvider;
+      try{
+        await ethereum.enable().then(function(){
+          provider = window.web3.currentProvider;
+          metamask = true;
+          web3 = new Web3(provider);
+          console.log("_init",metamask)
+          console.log("_____so you've got the provider?", web3.eth.givenProvider)
+          console.log("_____selected address?", web3.eth.givenProvider.selectedAddress)
+          var addressChecker = setInterval(function(){
+            if(web3.eth.givenProvider.selectedAddress){
+              clearInterval(addressChecker)
+              commit('walletLockToggle', metamask)
+              if(state.mode=="color"){
+                console.log("dispatch for proxy address")
+                dispatch("getProxyAddress")
+              }else{
+                relativeAddress = state.currentAddress;
+                commit('rpcActivate')
+                dispatch('updateNameList')
+              } 
+            }
+          },500)
+        })
+      }catch(err){
+        console.log(">>>>>>>>>>>>>MM error",err)
+        if (typeof web3 !== 'undefined') {
+            console.log('web3 defined')
+            web3 = new Web3(web3.currentProvider)
+            metamask = true
+        }else if(window.web3 && window.web3.currentProvider){
+            console.log('provider exists')
+            provider = window.web3.currentProvider
             metamask = true;
-            web3 = new Web3(provider);
-            console.log("_init",metamask)
-            console.log("_____so you've got the provider?", web3.eth.givenProvider)
-            console.log("_____selected address?", web3.eth.givenProvider.selectedAddress)
-            var addressChecker = setInterval(function(){
-              if(web3.eth.givenProvider.selectedAddress){
-                clearInterval(addressChecker)
-                commit('walletLockToggle', metamask)
-                if(state.mode=="color"){
-                  console.log("dispatch for proxy address")
-                  dispatch("getProxyAddress")
-                }else{
-                  relativeAddress = state.currentAddress;
-                  commit('rpcActivate')
-                } 
-              }
-            },500)
-          })
-        }catch(err){
-          console.log(">>>>>>>>>>>>>MM error",err)
-          if (typeof web3 !== 'undefined') {
-              console.log('web3 defined')
-              web3 = new Web3(web3.currentProvider)
-              metamask = true
-          }else if(window.web3 && window.web3.currentProvider){
-              console.log('provider exists')
-              provider = window.web3.currentProvider
-              metamask = true;
-              web3 = new Web3(provider)
-          }else{
-              console.log('infura')
-              //HTTP://127.0.0.1:7545
-              //provider = new Web3.providers.HttpProvider("http://127.0.0.1:7545")
-              provider = new Web3.providers.HttpProvider("https://ropsten.infura.io/v3/56102f35cb314362a455c7cf6958961e");
-              web3 = new Web3(provider)
-          }
-          console.log("...init",metamask)
-          commit('walletLockToggle', metamask)
-          if(state.mode=="color"){
-            console.log("dispatch for proxy address")
-            dispatch("getProxyAddress")
-          }else{
-            relativeAddress = state.currentAddress;
-            commit('rpcActivate')
-          }
+            web3 = new Web3(provider)
+        }else{
+            console.log('infura')
+            //HTTP://127.0.0.1:7545
+            //provider = new Web3.providers.HttpProvider("http://127.0.0.1:7545")
+            provider = new Web3.providers.HttpProvider("https://ropsten.infura.io/v3/56102f35cb314362a455c7cf6958961e");
+            web3 = new Web3(provider)
         }
+        console.log("...init",metamask)
+        commit('walletLockToggle', metamask)
+        if(state.mode=="color"){
+          console.log("dispatch for proxy address")
+          dispatch("getProxyAddress")
+        }else{
+          relativeAddress = state.currentAddress;
+          commit('rpcActivate')
+          dispatch('updateNameList')
+        }
+      }
+
+      
     },
     getProxyAddress: ({commit, dispatch, state})=>{
       colorAPI.proxyAddress(state.currentAddress).call().then( (proxyAddress)=>{
-        console.log("Proxy Address")
+        console.log("____:::Proxy Address:::___")
         console.log(proxyAddress)
         relativeAddress = proxyAddress;
         commit('rpcActivate')
+        dispatch('updateNameList')
       })
     },
     updateCycle: async({commit,dispatch,state})=>{
@@ -200,20 +231,29 @@ export const store = new Vuex.Store({
             }).catch( err )   
           }else{
             colorAPI.getData("0x0000000000000000000000000000000000000000","-1").call().then( (r)=>{
-              let bonds = Big(r[3].toString()).div(1e12).toFixed(2)
-              let MR = Big(r[5].toString()).div(1e12).toFixed(2)
-              let CR = r[2]
-              commit("update_totalBondSupply", bonds)
-              commit("update_masternodeRequirement", MR)
-              commit("update_communityResolve", CR)
+              commit("update_totalBondSupply", Big(r[3].toString()).div(1e12).toFixed(2))
+              commit("update_masternodeRequirement", Big(r[5].toString()).div(1e18).toFixed(2))
+              commit( "update_communityResolve", r[2] )
             }).catch( err )
           }
 
-          colorAPI.getData(state.currentAddress,"0").call().then( (r)=>{
-            let MR = Big(r[5].toString()).div(1e12).toFixed(4)
-            let CR = r[2]
-            commit("update_yourSuggestedMR", MR)
-            commit("update_yourCandidate", CR)
+          if(state.communityResolve != "0x0000000000000000000000000000000000000000")
+          colorAPI.getData(state.communityResolve,"-1").call().then( (r)=>{
+            commit("update_communityFund", Big( r[3].toString() ).div(1e18).toFixed(4) )
+            //console.log("communityFund",r[3].toString() )
+          }).catch( err )
+
+          colorAPI._UINT("13", state.currentAddress).call().then( (r)=>{
+            commit("update_unlockedResolves", Big( r.toString() ).div(1e18).toFixed(4) )
+          })
+
+          colorAPI.getData(state.currentAddress,"-1").call().then( (r)=>{
+            commit("update_yourSuggestedMR", Big( r[5].toString() ).div(1e18).toFixed(4))
+            commit("update_yourCandidate", r[2])
+            commit("update_yourGateway", r[0])
+            commit("update_yourReffEarnings", Big( r[3].toString() ).div(1e18).toFixed(4) )
+            /**/
+            console.log(r[5].toString() , r[2] ,r[1] ,r[0] ,"\nReff Earnings: "+r[3].toString(),r[4].toString() )
           }).catch( err )
           /*powhrAPI.poolFunds().call().then( (r)=>{
             let bigR = Big(r.toString())
@@ -258,7 +298,7 @@ export const store = new Vuex.Store({
               let blue = parseInt((parseInt(r[2]) / 1e18)*255)
               //console.log("resolves: ",parseFloat(state.yourResolves) ,"---- RGB", red,green,blue)
               if(parseFloat(state.yourResolves)>0){
-                console.log("resolves: ",parseFloat(state.yourResolves) ,"---- RGB", red,green,blue)
+                //console.log("resolves: ",parseFloat(state.yourResolves) ,"---- RGB", red,green,blue)
                 commit("update_resolveColor", rgbToHex(red,green,blue) )
             }
             })
@@ -336,6 +376,69 @@ export const store = new Vuex.Store({
         }
       },1000)
     },
+    updateNameList: async({commit,dispatch,state})=>{
+      console.log("::::: Update Name List ::::")
+      rnsAPI.getNameList(state.currentAddress).call().then( (r)=>{
+        console.log( "Name List" )
+        console.log(r)
+        let NAME_LIST = []
+
+        //let nameIDs= r[0]
+        //let totalWeights = r[3]
+        let nameIDs = r[0]
+        let weights = r[1]
+        let yourCandidates = r[2]
+        let currentOwners = r[3]
+        let names = r[4]
+
+        console.log( "Current Leaders", currentOwners )
+        //console.log( nameIDs )
+        let L = r[0].length; 
+        r[0].forEach( (k,i) =>{
+          //console.log("----------...", web3.utils.toAscii( names[i] ) )
+          let NAME = web3.utils.toAscii( names[i] ).trim();
+          console.log("NAME ID+++++: ",   nameIDs[i].toString() )
+          NAME_LIST.push({
+            nameID: nameIDs[i].toString(),
+            name: NAME,
+            yourWeight:  Big( weights[i].toString()).div(1e18).toFixed(4),//parseInt(Big(1e12).mul(rgb.r).div(255)).toString()
+            yourCandidate: yourCandidates[i],
+            candidateWeight:  Big( weights[L+i].toString()).div(1e18).toFixed(4),//parseInt(Big(1e12).mul(rgb.r).div(255)).toString()
+            leaderWeight:  Big( weights[L*2+i].toString() ).div(1e18).toFixed(4),//parseInt(Big(1e12).mul(rgb.r).div(255)).toString()
+            currentOwner: currentOwners[i]
+          })
+        })
+        console.log("%% NAME_LIST %%")
+        console.log(NAME_LIST)
+        commit("update_nameList", NAME_LIST)
+        console.log("%% nameList %%")
+        console.log(NAME_LIST)
+      }).catch( err )
+    },//resolveNamingService
+    nameStake: ({commit, dispatch, state})=>{
+      console.log("state.rnsCandidate: ", state.rnsCandidate)
+      //web3.utils.isAddress
+      let API = colorAPI.nameStake( state.rnsName, true, weiForm(state.lockAmount), 0, state.rnsCandidate )
+      web3.eth.sendTransaction({
+        from: state.currentAddress,
+        to: colorAddress,
+        data: API.encodeABI()
+      },(e,hash)=>{
+        err(e)
+      });
+    },
+    unstakeName: ({commit, dispatch, state}, data)=>{
+      //console.log("state.rnsCandidate: ",state.rnsCandidate)
+      console.log("Data",{NAME:data.nameID, AMOUNT: data.amount} )
+      let API = colorAPI.nameStake( '', false, weiForm(data.amount), data.nameID, '0x0000000000000000000000000000000000000000' )
+      web3.eth.sendTransaction({
+        from: state.currentAddress,
+        to: colorAddress,
+        data: API.encodeABI()
+      },(e,hash)=>{
+        err(e)
+      });
+    },
     buyBonds: ({commit, dispatch, state})=>{
       let address, API;
       function hexToRgb(hex) {
@@ -354,8 +457,10 @@ export const store = new Vuex.Store({
         let bigB = parseInt(Big(1e12).mul(rgb.b).div(255)).toString()
         console.log("____ COLORS RBG ____")
         console.log(bigR,bigG,bigB)
-        API = colorAPI.buy(state.currentAddress,bigR,bigG,bigB,"0x0000000000000000000000000000000000000000")
+
+        API = colorAPI.buy(state.currentAddress, bigR, bigG, bigB,  ensureAddress( state.urlGateway ))
         address = colorAddress
+        
       }else{
         API = powhrAPI.fund()
         address = powhrAddress

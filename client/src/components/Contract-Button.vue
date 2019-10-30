@@ -9,11 +9,17 @@
 export default {
   name: 'contract-button',
   props:{
-    action: String
+    action: String,
+    data: Object
   },
   methods:{
     dispatch(){
-      this.$store.dispatch(this.action)
+      if(this.action){
+        if(this.data)
+          this.$store.dispatch(this.action,this.data)
+        else
+          this.$store.dispatch(this.action)
+      }
     }
   }
 }

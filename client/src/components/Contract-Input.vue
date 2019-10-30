@@ -37,8 +37,10 @@ export default {
     updateState(e){
       let value = e.target.value
       if ( value === '')
-        value = 0
+        value = '0'
+      
       this.$store.commit("update_"+this.commit, value)
+      
       if (this.onChange)
         this.onChange()
     }

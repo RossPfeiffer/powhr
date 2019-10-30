@@ -7,7 +7,7 @@
         <contract-data label="Resolve Pool" :value="totalStakedResolves" :img="resolveIcon" />
         <contract-data label="Resolve Fee" :value="resolveFee" :img="feeIcon" />
         <contract-data label="Release Hodl" :value="avgHodlRelease" :img="clockIcon" />
-        <contract-data label="Color Fee" value="10%" :img="feeIcon" />
+        <contract-data label="Color Fee" v-if="mode=='color'" value="10%" :img="feeIcon" />
       </div>
     </control-box>
     <control-box id="buy-box" title="Buy">
@@ -28,7 +28,7 @@
           <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon" v-if="mode!='color'"/>
           <contract-data label="Your Hodl" :value="yourHodl" :img="clockIcon" />
         </div>
-        <contract-data label="Resolves in Wallet" :value="yourResolves" :img="resolveIcon"  v-if="mode=='color'" v-bind:style="{ backgroundColor: resolveColor}"/>
+        <contract-data label="Color Tokens" :value="yourResolves" :img="resolveIcon"  v-if="mode=='color'" v-bind:style="{ backgroundColor: resolveColor}"/>
         <!--<div class="gap"><div class="color-indicator" v-bind:style="{ backgroundColor: bondColor}"><img :src="bondsIcon"/>Bonds</div></div>-->
     </control-box>
     <control-box id="" title="Sell">
@@ -46,8 +46,9 @@
       <contract-input label="Pull Resolves" placeholder="e.g. 1200" commit="resolvesToPull"/>
       <contract-button action="pullResolves">Pull Resolves</contract-button>
     </control-box>
-    <control-box id="" title="Earnings">
-      <contract-data label="ETH Dividends " :value="yourEarnings" :img="ethIcon"/>
+    <control-box id="" title="Earnings"> 
+      <contract-data label="ETH Dividends " v-if="mode!='color'" :value="yourEarnings" :img="ethIcon"/>
+      <contract-data label="ETH Dividends " v-if="mode=='color'" :value="yourEarnings +' + '+ yourReffEarnings" :img="ethIcon"/>
       <contract-input  label="Earnings to Pull" placeholder="e.g. 0.48" commit="earningsToPull"/>
       <contract-button action="withdrawEarnings">Withdraw</contract-button>
       <contract-input  label="Earnings to Reinvest" placeholder="e.g. 0.48" commit="earningsToReinvest"/>
@@ -110,6 +111,7 @@
         "yourResolves",
         "yourStakedResolves",
         "yourEarnings",
+        "yourReffEarnings",
         "estimatedBonds",
         "estimatedEth",
         "estimatedResolves",

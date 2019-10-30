@@ -1,1 +1,1 @@
-export default "0x731d01B265ba2067ff7d241fB9f9d97145f2298d"
+export default "0x1F365E8573342b54112539dB94607617746DF797"//dirty test pyramid

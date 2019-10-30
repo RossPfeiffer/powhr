@@ -354,7 +354,7 @@ contract Pyramid{
 		// How much reserve Ether do we have left in the contract?
 		uint reserveAmount = reserve();
 
-		// If you're the Highlander (or bagholder), you get The Prize. Everything left in the vault.
+		// If you're the Highlander (or bagholder), you get The Prize. Everything left in the remainder's vault.
 		if (bondTokens == _totalSupply)
 			return reserveAmount;
 
@@ -459,9 +459,9 @@ contract Pyramid{
 		// Retrieve the resolveEarnings associated with the address the request came from.
 		uint upScaleDivs = (uint)((int256)( earningsPerResolve * resolveWeight[sender] ) - payouts[sender]);
 		uint totalEarnings = upScaleDivs / scaleFactor;//resolveEarnings(sender);
-		require(amount <= totalEarnings, "the amount exceeds total earnings");
+		require( amount <= totalEarnings && amount > 0 );
 		uint oldWeight = resolveWeight[sender];
-		resolveWeight[sender] = oldWeight * (totalEarnings - amount) / totalEarnings;
+		resolveWeight[sender] = oldWeight * ( totalEarnings - amount ) / totalEarnings;
 		uint weightDiff = oldWeight * amount / totalEarnings;
 		dissolved += weightDiff;
 		dissolvingResolves -= weightDiff;
@@ -483,8 +483,8 @@ contract Pyramid{
 	function pullResolves(uint amount) public{
 		address sender = msg.sender;
 		uint resolves = resolveWeight[ sender ];
-		require(amount <= resolves, "that amount is too large");
-		require(amount <= dissolvingResolves, "you can't forfeit the last amount");
+		require(amount <= resolves && amount > 0);
+		require(amount <= dissolvingResolves);//"you can't forfeit the last amount"
 
 		uint allEarnings = (uint)((int256)(resolves * earningsPerResolve) - payouts[sender]);
 		uint forfeitedEarnings = allEarnings * amount / resolves;//(uint)( (int256)(amount * earningsPerResolve) / allEarnings );
@@ -506,7 +506,7 @@ contract Pyramid{
 		//attack someone's resolve potential by sending them some love
 		address sender = msg.sender;
 		uint totalBonds = hodlBonds[sender];
-		require(amount <= totalBonds, "amount exceeds hodlBonds" );
+		require(amount <= totalBonds && amount > 0);
 		uint ethSpent = avgFactor_ethSpent[sender] * amount / totalBonds;
 		uint buyInTimeSum = avgFactor_buyInTimeSum[sender] * amount / totalBonds;
 		avgFactor_ethSpent[sender] -= ethSpent;

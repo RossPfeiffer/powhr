@@ -1,5 +1,5 @@
 let state = {
-  mode:"color",
+  mode:"",
   rpcActive:false,
   currentAddress: null,
   proxyAddress: null,
@@ -23,6 +23,7 @@ let state = {
   yourResolves:'0',
   yourStakedResolves:'0',
   yourEarnings:'0',
+  yourReffEarnings:'0',
   estimatedBonds:'0',
   estimatedEth:'0',
   estimatedResolves:'0',
@@ -36,6 +37,17 @@ let state = {
   yourSuggestedMR:"0",
   yourCandidate:"0x000",
   masternodeRequirement:"0",
-  communityResolve:"0x000"
+  communityResolve:"0x0000000000000000000000000000000000000000",
+  communityFund:"0",
+  inputMR:"",
+  inputCR:'',
+  yourGateway: "0x000",
+  urlGateway: "0x000",
+  resolveNamingService: "0x000",
+  nameList:[],
+  rnsName:"",
+  rnsCandidate:"",
+  lockAmount:"",
+  unlockedResolves:"0"
 }
 export default state

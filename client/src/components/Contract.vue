@@ -3,7 +3,7 @@
     <nav-menu></nav-menu>
     <div id="exchange-page">
       <header id="heeedddd">
-        <h1>Color Exchange</h1>
+        <h1>TESTNET</h1>
         <div id="contract-nav" v-if="mode=='color'">
           <button v-bind:class="{ selected: (tab == 0) }" @click="tabSelect(0)">Exchange</button>
           <button v-bind:class="{ selected: (tab == 1) }" @click="tabSelect(1)">DAO</button>
@@ -16,8 +16,6 @@
         <d-a-o v-if="tab==1"/>
         <stats v-if="tab==2"/>
       </metamask-gateway>
-
-        <h2><center>{{$route.params.masternode}}</center></h2>
     </div>
     <footer><a :href="'https://ropsten.etherscan.io/address/'+powhrAddress" target="_blank">Pyramid Contract</a> | <a :href="'https://ropsten.etherscan.io/address/'+tokenAddress" target="_blank">Resolve Contract</a> | <a :href="'https://ropsten.etherscan.io/address/'+colorAddress" target="_blank">Color Contract</a></footer>
   </div>
@@ -41,6 +39,7 @@ export default {
   name: 'market',
   created(){
     this.$store.dispatch("connectToMetaMask")
+    this.$store.commit("update_urlGateway", this.$route.params.masternode)
   },
   data(){return{
       tab:0,
@@ -104,10 +103,23 @@ export default {
   position: absolute;
   top:20px;
 }
+
 #contract-nav button{
   width:80px;
   margin-left:10px;
   margin-right:10px;
+
+  background:#f5f5f5;
+  border-style:solid;
+  border-width:1.5px;
+  border-color:#444;
+  padding:7px;
+  color: #444;
+  position: relative;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  width:125px;
 }
 #contract-nav {
     display: -ms-flexbox;

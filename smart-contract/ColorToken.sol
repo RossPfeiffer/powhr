@@ -25,7 +25,7 @@ contract ColorToken{
 	string public name = "Color Token";
     string public symbol = "`c";
     uint8 constant public decimals = 18;
-	uint _totalSupply/*===*/;
+	uint totalColoredSupply/*===*/;
 
 
 	mapping(address => address payable) proxy;
@@ -61,7 +61,7 @@ contract ColorToken{
 	address lastGateway;
 	address communityResolve;
 	uint _totalBonds;
-	uint pyrColorResolves;
+	//uint pyrColorResolves;
 	uint masternodeRequirement = 0;
 	uint colorFee = 10; // 10%
 
@@ -70,31 +70,19 @@ contract ColorToken{
 		resolveContract = ResolveContract( bondContract.getResolveContract() );
 		RNS = new ResolveNamingService(THIS);
 		communityResolve = msg.sender;
-		lastGateway = THIS;
+		lastGateway = communityResolve;
 	}
 
     function totalSupply() public view returns (uint256) {
-        return _totalSupply/*===*/;
+        return totalColoredSupply/*===*/;
     }
-
-	function fundCR() payable public {
-  		pocket[THIS] += msg.value;
-  	}
 
 	function balanceOf(address addr) public view returns (uint balance) {
 		if(proxyAddress(addr) == nulf)
 		return 0;
         return _PyramidProxy(addr).getBalance();
     }
-	/*function max1(uint x) internal pure returns (uint){
-		if(x>1e12)
-			return 1e12;
-		else
-			return x;
-	}*/
-	/*function proxy(address addr) returns(PyramidProxy){
-		proxies[proxyID[addr]]
-	}*/
+	
 	function ensureProxy(address addr) internal{
 		if( proxyAddress(addr) == nulf){
 			PyramidProxy prox = new PyramidProxy( this, bondContract );
@@ -102,28 +90,89 @@ contract ColorToken{
 			proxyOwner[ address(prox) ] = address(uint160(addr));
 		}
 	}
-  	event MinecartPush(address indexed addr, address newMinecartLocation, uint upline );
+
+
+    event Buy( address indexed addr, uint256 spent, uint256 bonds, uint red, uint green, uint blue);
+	
+	function buy(address addr, uint ETH, uint _red, uint _green, uint _blue, bool regularBuy) internal returns(uint bondsCreated){
+  		ensureProxy(addr);
+		
+		if(_red>1e12) return _red = 1e12;
+		if(_green>1e12) return _green = 1e12;
+		if(_blue>1e12) return _blue = 1e12;
+
+		uint fee;
+		if(regularBuy){
+			fee = ETH / colorFee;
+		}
+		uint eth4Bonds = ETH - fee;
+
+		address payable proxyAddr = proxyAddress(addr);
+		proxyAddr.transfer(eth4Bonds);
+		(uint createdBonds,) = PyramidProxy( proxyAddr ).publix(5,0);/**/
+		_totalBonds += createdBonds;
+		bondsAddColor(addr,createdBonds, _red, _green, _blue);
+
+		coloredBonds[addr] += createdBonds;
+		pushMinecart(addr);
+
+		if( regularBuy ){
+			fee = fee/2;
+			pocket[ _ADDRESS(GATEWAY,addr) ] += fee;
+			upline[ _ADDRESS(GATEWAY,addr) ] += fee - fee/5;
+			pocket[ communityResolve ] += fee/5;
+			
+			emit Buy( addr, ETH, createdBonds, _red, _green,  _blue);
+		}
+
+		if(checkMR(addr)){
+			lastGateway = addr;	
+		}
+		return createdBonds;/**/
+  	}
+	function checkMR(address addr) internal view returns(bool){
+  		return ( _UINT(COLOREDRESOLVES, addr) >= masternodeRequirement && addr != nulf && addr != msg.sender ) || addr == communityResolve;
+  	}
+	function buy(address addr, uint _red, uint _green, uint _blue, address gatewayAddress) payable public returns(uint bondsCreated){
+		address sender = msg.sender;
+
+		if( _ADDRESS(GATEWAY, sender) == nulf){
+			votingForCR[sender] = communityResolve;
+			votingForMR[sender] = masternodeRequirement;
+			
+			if( checkMR(gatewayAddress) ){
+				ADDRESS_(GATEWAY, sender, gatewayAddress);
+			}else{
+				ADDRESS_(GATEWAY, sender, lastGateway);
+			}
+		}
+
+		return buy( addr, msg.value, _red, _green, _blue, true );
+	}
+
+  	//event Minecart_and_Snatch(address indexed addr, address newMinecartLocation, uint upline, bool SNATCH );
   	//event GatewaySwitch(address newGateway );
   	function pushMinecart(address addr) public {
-  		if( _UINT(COLOREDRESOLVES,addr)>0 ){
-	  		address gate = _ADDRESS(0,addr);
+  		if( _ADDRESS(GATEWAY, addr) == nulf ){
+	  		address gate = _ADDRESS(GATEWAY,addr);
+	  		// Snatch someone's gateway by being the last gateway and ensuring they fail the mr check.
 	  		if( !checkMR(gate) ){
 				ADDRESS_(GATEWAY, addr, lastGateway);
-				//emit GatewaySwitch(lastGateway);
+				//emit Minecart_and_Snatch( addr, lastGateway, 0, true );
 			}
 
 	  		address pushcart = _ADDRESS(MINECART,addr);
-	  		address upCart = _ADDRESS(0, pushcart );
-	  		address nextCartPosition = pushcart == THIS ? addr : upCart;
+	  		//address upCart = ;
+	  		address nextCartPosition = pushcart == communityResolve ? addr : _ADDRESS(GATEWAY, pushcart );
 
 			ADDRESS_(MINECART, addr, nextCartPosition);
 			pushcart = nextCartPosition;
 
 			uint up = _UINT(UPLINE, pushcart );
 			pocket[ pushcart ] +=  up/5;
-			upline[ _ADDRESS(0, pushcart ) ] += up - up/5;
+			upline[ _ADDRESS(GATEWAY, pushcart ) ] += up - up/5;
 			upline[ pushcart ] = 0;
-			emit MinecartPush( addr, pushcart, up );
+			//emit Minecart_and_Snatch( addr, pushcart, up, false );
 		}
 
 		address candidate = _ADDRESS(VOTING_FOR_CR, msg.sender);
@@ -137,24 +186,18 @@ contract ColorToken{
 
   	}
 
-	/*function getData(address A) public view returns (address,uint,uint){
-		return ( gateway[A], pocket[A], upline[A] );
-	}*/
-	/*function getData(address A) public view returns (address,uint,uint){
-		return (gateway[A], pocket[A],  upline[A] );
-	}*/
 	function getData(address A, int numeric) public view returns (address,address,address,uint,uint,uint){
-		//address nulf = nulf;
 		if(numeric < 0){
 			if(A == nulf){
-				return ( address(bondContract), lastGateway, communityResolve, _totalBonds, pyrColorResolves, masternodeRequirement);
+				return ( address(bondContract), lastGateway, communityResolve, _totalBonds, 0, masternodeRequirement);
 			}else{
-				return ( _ADDRESS(0, A ), _ADDRESS(MINECART,A), _ADDRESS(VOTING_FOR_CR,A), _UINT(POCKET,A), _UINT(UPLINE,A), _UINT(VOTING_FOR_MR,A) );
+				return ( _ADDRESS(GATEWAY, A ), _ADDRESS(MINECART,A), _ADDRESS(VOTING_FOR_CR,A), _UINT(POCKET,A), _UINT(UPLINE,A), _UINT(VOTING_FOR_MR,A) );
 			}	
 		}else{
 			return ( nulf, nulf, nulf, _UINT(VOTES_FOR_CR,A), _votesForMR((uint)(numeric)), 0 );
 		}
 	}
+
 	function _UINT(uint8 c, address addr) public view returns(uint){
 		if(c == 0){return redBonds[addr];}
 		else if(c==1){return greenBonds[addr];}
@@ -169,17 +212,19 @@ contract ColorToken{
 		else if(c==10){return pocket[addr];}
 		else if(c==11){return upline[addr];}
 		else if(c==12){return lockedResolves[addr];}
+		else if(c==13){return _UINT(COLOREDRESOLVES,addr) - _UINT(LOCKEDRESOLVES,addr);}//Available RNS Color Resolves
 	}
+
 	function _ADDRESS(uint8 c, address addr) public view returns(address){
 		if(c == 0){return gateway[addr];}
 		else if(c==1){return minecart[addr];}
 		else if(c==2){return votingForCR[addr];}
 		else if(c==3){return proxyOwner[addr];}
+		else if(c==4){return address(RNS);}
 	}
-	function ADDRESS_(uint8 c, address addr, address addr2) public returns(address){
-		if(c == 0){gateway[addr]=addr2;}
-		else if(c==1){minecart[addr]=addr2;}
-		//else if(c==2){votingForCR[addr]=addr2;}
+	function ADDRESS_(uint8 c, address addr, address addr2) internal returns(address){
+		if(c == 0){gateway[addr] = addr2;}
+		else if(c==1){minecart[addr] = addr2;}
 		//else if(c==3){proxyOwner[addr]=addr2;}
 	}
 	/*
@@ -202,44 +247,24 @@ contract ColorToken{
   			withdraw(numeric);
 		}else if(Type==5){
   			setVotingForMR(numeric);
-		}else if(Type==6){
-  			pullAffiliateEarningsOnly();
-  		}/*else if(Type==7){
-  		}*/
+		}
   	}
   	function sell(uint amountToSell) internal{
   		address sender = msg.sender;
-  		uint coloredBondsBefore = _UINT(COLOREDBONDS,sender);
-  		uint regularBonds = bondBalance(sender) - coloredBondsBefore;
-  		//if(amountToSell>)
-  		uint coloredAmountToSell = amountToSell;
-  		if(regularBonds>0){
-  			uint regularBondsToBeSold;
-  			if(amountToSell >= regularBonds){
-  				regularBondsToBeSold = regularBonds;
-  				coloredAmountToSell -= regularBonds;
-  			}else{
-  				regularBondsToBeSold = amountToSell;
-  				coloredAmountToSell = 0;
-  			}
-  			_PyramidProxy(sender).publix(0, regularBondsToBeSold);
-  		}
-  		if(coloredAmountToSell>0){
-	  		(uint _red, uint _green, uint _blue) = RGB_bondRatio();
-	  		(uint mintedResolves,) = _PyramidProxy(sender).publix(0,coloredAmountToSell);
-	  		_totalBonds -= coloredAmountToSell;
-	  		/*uint _red = redBonds[sender] / coloredBondsBefore;
-	  		uint _green = greenBonds[sender] / coloredBondsBefore;
-	  		uint _blue = blueBonds[sender] / coloredBondsBefore;*/
-			resolvesAddColor(sender, mintedResolves, _red*1e6, _green*1e6, _blue*1e6);
-	  		votesForCR[ _ADDRESS(VOTING_FOR_CR,sender) ] += mintedResolves;
-	  		if(!isContract(sender)) votesForMR[ _UINT(VOTING_FOR_MR ,sender) ] += mintedResolves;
-	  		_totalSupply/*===*/ += mintedResolves;
-			coloredResolves[sender] += mintedResolves;
-			emit Sell(sender, coloredAmountToSell, mintedResolves, _red, _green, _blue );
-	  		bondsThinColor(sender, coloredBondsBefore - coloredAmountToSell, coloredBondsBefore);
-	  	}
-
+  		uint bondsBefore = bondBalance(sender);
+  		(uint _red, uint _green, uint _blue) = RGB_bondRatio();
+  		(uint mintedResolves,) = _PyramidProxy(sender).publix(0,amountToSell);
+  		_totalBonds -= amountToSell;
+  		uint mintedColor = mintedResolves * _UINT(COLOREDBONDS, sender) / bondsBefore;
+		resolvesAddColor(sender, mintedColor, _red*1e6, _green*1e6, _blue*1e6);
+  		if(!isContract(sender)){
+			votesForCR[ _ADDRESS(VOTING_FOR_CR,sender) ] += mintedColor;
+			votesForMR[ _UINT(VOTING_FOR_MR ,sender) ] += mintedColor;	
+		} 
+		coloredResolves[sender] += mintedColor;
+  		totalColoredSupply/*===*/ += mintedColor;//Resolves *  / bondBalance(sender);
+		emit Sell(sender, amountToSell, mintedColor, _red, _green, _blue );
+  		bondsThinColor(sender, bondsBefore - amountToSell, bondsBefore );
   		pushMinecart(sender);
   	}
   	function _votesForMR(uint MR) internal view returns(uint){return votesForMR[MR];}
@@ -248,7 +273,6 @@ contract ColorToken{
   	function stake(uint amountToStake) internal{
   		address sender = msg.sender;
 		colorShift(sender, address(bondContract), amountToStake );
-		pyrColorResolves += amountToStake;
 		_PyramidProxy(sender).publix(1, amountToStake );
 		pushMinecart(sender);
   		//minecart[sender] = sender;
@@ -259,35 +283,38 @@ contract ColorToken{
   	}
   	function unstake(uint amountToUnstake) internal{
   		address sender = msg.sender;
-		colorShift(address(bondContract), sender, amountToUnstake );//pyrColorResolves
-		pyrColorResolves -= amountToUnstake;
+		colorShift(address(bondContract), sender, amountToUnstake );//pyrColorResolves;
 		_PyramidProxy(sender).publix(2, amountToUnstake );
 		pushMinecart(sender);
-  	}/**/
-  	event Reinvest( address indexed addr, uint256 affiliateEarningsSpent, uint256 bonds);
+  	}
+  	event Reinvest( address indexed addr, uint256 affiliateEarningsSpent, uint256 bondsCreated);
   	function reinvest(uint amount) internal{
   		address sender = msg.sender;
-  		//address proxyAddr = proxyAddress( sender );
-  		//uint bal = bondContract.balanceOf( proxyAddr );
-  		/*uint red = redBonds[sender] / bal;
-		uint green = greenBonds[sender] / bal;
-		uint blue = blueBonds[sender] / bal;*/
 		(uint red, uint green, uint blue) = RGB_bondRatio();
 
   		uint createdBonds;
   		uint dissolvedResolves;
-		(createdBonds, dissolvedResolves) = _PyramidProxy(sender).publix(3,amount);
-		uint pock = _UINT(POCKET,sender);
-		pocket[sender] = 0;
-		_totalBonds += createdBonds;
-		createdBonds += buy( sender, pock, red, green, blue, false);
-		coloredBonds[sender] += createdBonds;
 
-		bondsAddColor(sender, createdBonds, red, green, blue);
-		// update core contract's Resolve color
-		pyrColorResolves -= dissolvedResolves;
-		resolvesThinColor( address(bondContract) , pyrColorResolves, pyrColorResolves + dissolvedResolves);
-		emit Reinvest( sender, pock, createdBonds);
+		uint pock = _UINT(POCKET, sender);
+		require( pock >= 0.000001 ether || amount > 0 );
+
+  		uint pockBonds;
+		if (pock >= 0.000001 ether){
+			pocket[sender] = 0;
+			pockBonds = buy( sender, pock, red, green, blue, false );
+		}
+
+		if(amount>0){
+			(createdBonds, dissolvedResolves) = _PyramidProxy(sender).publix(3,amount);
+
+			_totalBonds += createdBonds;
+			coloredBonds[sender] += createdBonds;
+			uint pyrColorResolves = coloredResolves[ address(bondContract) ];
+			bondsAddColor(sender, createdBonds, red, green, blue);
+			resolvesThinColor( address(bondContract) , pyrColorResolves, pyrColorResolves + dissolvedResolves);
+		}
+
+		emit Reinvest( sender, pock, createdBonds + pockBonds);
 		pushMinecart(sender);
   	}
 
@@ -295,14 +322,10 @@ contract ColorToken{
   		address payable sender = msg.sender;
   		(uint dissolvedResolves,) = _PyramidProxy(sender).publix(4,amount);
   		uint earned = _UINT(POCKET,sender);
-  		pocket[sender] = 0;
-  		// update core contract's Resolve color
-		//address pyrAddr = address(bondContract);
-		//uint currentResolves = resolveContract.balanceOf( pyrAddr );
-		pyrColorResolves -= dissolvedResolves;
+	  	pocket[sender] = 0;
+		uint pyrColorResolves = coloredResolves[address(bondContract)];
 		resolvesThinColor(address(bondContract), pyrColorResolves, pyrColorResolves + dissolvedResolves);
 		pushMinecart(sender);
-
   		sender.transfer( earned );
   	}
 
@@ -311,6 +334,7 @@ contract ColorToken{
 	}
 	function unbindResolves(uint amount) public {
   		address sender = msg.sender;
+  		sufficientResolves(amount, false);
 		uint totalResolves = resolveContract.balanceOf( proxyAddress(sender) );
 		resolvesThinColor( sender, totalResolves - amount, totalResolves);
 		_PyramidProxy(sender).transfer(sender, amount);
@@ -329,7 +353,7 @@ contract ColorToken{
 	}
 	function setVotingForMR(uint MR_votingFor) internal {
   		address sender = msg.sender;
-  		if(!isContract(sender)) {
+  		if( !isContract(sender) ) {
 			uint voteWeight = _UINT(COLOREDRESOLVES,sender);
 			votesForMR[ _UINT(VOTING_FOR_MR, sender ) ] -= voteWeight;
 			votingForMR[ sender ] = MR_votingFor;
@@ -338,25 +362,10 @@ contract ColorToken{
 		//emit VoteForMR(msg.sender, _votingForMR, voteWeight);
 	}
 
-	function pullAffiliateEarningsOnly() internal{
-		if(msg.sender == communityResolve){
-			pushMinecart(THIS);
-			uint money_gotten = _UINT(POCKET, THIS);
-			money_gotten += _UINT(POCKET, msg.sender );
-			pocket[ msg.sender ] = 0;
-			pocket[ THIS ] = 0;
-			msg.sender.transfer(money_gotten);
-		}else{
-			pushMinecart(msg.sender);
-			uint money_gotten = _UINT(POCKET, msg.sender );
-			pocket[ msg.sender ] = 0;
-			msg.sender.transfer(money_gotten);
-		}
-	}
 
 	// Function that is called when a user or another contract wants to transfer funds .
 	function transfer(address _to, uint _value, bytes memory _data) public returns (bool success) {
-		if( balanceOf(msg.sender)-_UINT(LOCKEDRESOLVES,msg.sender) < _value ) revert();
+		sufficientResolves(_value, false);
 		if( isContract(_to) ){
 			return transferToContract(_to, _value, _data);
 		}else{
@@ -367,7 +376,7 @@ contract ColorToken{
 	// Standard function transfer similar to ERC20 transfer with no _data .
 	// Added due to backwards compatibility reasons .
 	function transfer(address _to, uint _value) public returns (bool success) {
-		if (balanceOf(msg.sender)-_UINT(LOCKEDRESOLVES,msg.sender) < _value) revert();
+		sufficientResolves(_value, false);
 		//standard function transfer similar to ERC20 transfer with no _data
 		//added due to backwards compatibility reasons
 		bytes memory empty;
@@ -428,18 +437,20 @@ contract ColorToken{
 	function RGB_scale(uint r, uint g, uint b, uint c, uint numerator, uint denominator) internal pure returns(uint,uint,uint,uint){
 		return (r * numerator / denominator, g * numerator / denominator, b * numerator / denominator, c * numerator / denominator );
 	}
-	function colorShift(address _from, address _to, uint _amount) internal{
+	function colorShift(address _from, address _to, uint _amount) internal returns(uint){
 		//uint bal = proxy[_from].getBalance();
 		/*uint red_ratio = redResolves[_from] * _amount / bal;
 		uint green_ratio = greenResolves[_from] * _amount / bal;
 		uint blue_ratio = blueResolves[_from] * _amount / bal;*/
-		uint coloredResolveTotal;
-		if(_from == address(bondContract) ){
-			coloredResolveTotal = pyrColorResolves;
+		uint resolveTotal;
+		if( _from == address(bondContract) ){
+			resolveTotal = resolveContract.balanceOf( _from );
 		}else{
-			coloredResolveTotal = _PyramidProxy( _from ).getBalance();
+			resolveTotal = _PyramidProxy( _from ).getBalance();
 		}
-		(uint red_ratio, uint green_ratio, uint blue_ratio, uint color_ratio) = RGB_scale(_UINT(REDRESOLVES,_from), _UINT(GREENRESOLVES,_from), _UINT(BLUERESOLVES,_from), _UINT(COLOREDRESOLVES,_from), _amount, coloredResolveTotal );
+		uint coloreds = _UINT(COLOREDRESOLVES,_from);
+		_amount = _amount * ( coloreds - _UINT(LOCKEDRESOLVES,_from) ) / coloreds;
+		(uint red_ratio, uint green_ratio, uint blue_ratio, uint color_ratio) = RGB_scale(_UINT(REDRESOLVES,_from), _UINT(GREENRESOLVES,_from), _UINT(BLUERESOLVES,_from), coloreds, _amount, resolveTotal );
 		redResolves[_from] -= red_ratio;
 		greenResolves[_from] -= green_ratio;
 		blueResolves[_from] -= blue_ratio;
@@ -448,61 +459,12 @@ contract ColorToken{
 		greenResolves[_to] += green_ratio;
 		blueResolves[_to] += blue_ratio;/**/
 		coloredResolves[_to] += color_ratio;
+		return color_ratio;
 	}
 
     function allowance(address src, address guy) public view returns (uint) {
         return approvals[src][guy];
     }
-    event Buy( address indexed addr, uint256 spent, uint256 bonds, uint red, uint green, uint blue);
-	
-	function buy(address addr, uint ETH, uint _red, uint _green, uint _blue, bool regularBuy) internal returns(uint bondsCreated){
-  		//address sender = msg.sender;
-		ensureProxy(addr);
-		/*_red = max1(_red);
-		_green = max1(_green);
-		_blue = max1(_blue);*/
-		if(_red>1e12) return _red = 1e12;
-		if(_green>1e12) return _green = 1e12;
-		if(_blue>1e12) return _blue = 1e12;
-
-		uint fee;
-		if(regularBuy){
-			fee = ETH / colorFee;
-		}
-		uint eth4Bonds = ETH - fee;
-
-		address payable proxyAddr = proxyAddress(addr);
-		proxyAddr.transfer(eth4Bonds);
-		(uint createdBonds,) = PyramidProxy( proxyAddr ).publix(5,0);/**/
-		_totalBonds += createdBonds;
-		bondsAddColor(addr,createdBonds, _red, _green, _blue);
-
-		coloredBonds[addr] += createdBonds;
-		pushMinecart(addr);
-
-		if( regularBuy ){
-			fee = fee/2;
-			pocket[ _ADDRESS(0,addr) ] += fee;
-			upline[ _ADDRESS(0,addr) ] += fee - fee/5;
-			pocket[ THIS ] += fee/5;
-			
-			emit Buy( addr, ETH, createdBonds, _red, _green,  _blue);
-		}
-
-		if(checkMR(addr)){
-			lastGateway = addr;	
-		}
-		return createdBonds;/**/
-  	}
-	function checkMR(address addr) internal view returns(bool){
-  		return  addr == THIS || ( addr != nulf && addr != msg.sender && _UINT(COLOREDRESOLVES, addr) >= masternodeRequirement ) ;
-  	}
-	function buy(address addr, uint _red, uint _green, uint _blue, address MASTERNODE) payable public returns(uint bondsCreated){
-		if( checkMR(MASTERNODE) && _ADDRESS(GATEWAY,addr) == nulf ){
-			ADDRESS_(GATEWAY, msg.sender, MASTERNODE);
-		}
-		return buy( addr, msg.value, _red, _green, _blue, true);
-	}
   	
     function transferFrom(address src, address dst, uint wad) public returns (bool){
     	address sender = msg.sender;
@@ -520,7 +482,7 @@ contract ColorToken{
     	address sender = msg.sender;
         approvals[sender][guy] = wad;
 
-        emit Approval(sender, guy, wad);
+        emit Approval( sender, guy, wad );
 
         return true;
     }
@@ -536,7 +498,9 @@ contract ColorToken{
 		blueBonds[addr] += blue * amount;
   	}
   	function resolvesThinColor(address addr, uint newWeight, uint oldWeight) internal{
-		(redResolves[addr], greenResolves[addr], blueResolves[addr], coloredResolves[addr]) = RGB_scale(_UINT(REDRESOLVES,addr), _UINT(GREENRESOLVES,addr), _UINT(BLUERESOLVES,addr), _UINT(COLOREDRESOLVES,addr), newWeight, oldWeight);
+  		uint coloreds = _UINT(COLOREDRESOLVES,addr);
+  		newWeight = newWeight * ( coloreds - _UINT(LOCKEDRESOLVES, addr) ) / coloreds;
+		(redResolves[addr], greenResolves[addr], blueResolves[addr], coloredResolves[addr]) = RGB_scale(_UINT(REDRESOLVES,addr), _UINT(GREENRESOLVES,addr), _UINT(BLUERESOLVES,addr), coloreds, newWeight, oldWeight);
 		/*redResolves[addr] = redResolves[addr] * newWeight / oldWeight;
   		greenResolves[addr] = greenResolves[addr] * newWeight / oldWeight;
   		blueResolves[addr] = blueResolves[addr] * newWeight / oldWeight;	*/
@@ -579,7 +543,7 @@ contract ColorToken{
 		return bondContract.balanceOf( proxyAddress(addr) );
 	}
 	event BondTransfer(address from, address to, uint amount, uint red, uint green, uint blue);
-	function bondTransfer(address to, uint amount) public{
+	function bondTransfer(address to, uint amount) public {
 		address sender = msg.sender;
 		uint sendersFormerTotalBonds = bondBalance(sender);
 		bondsThinColor( sender, sendersFormerTotalBonds - amount, sendersFormerTotalBonds);
@@ -590,15 +554,22 @@ contract ColorToken{
 	}
 
 	//function _UINT(LOCKEDRESOLVES,address addr) internal view returns(uint){return lockedResolves[addr];}
-  	function nameStake(string memory _name, bool unstake_or_stake, uint amount, address candidate) public{
+  	function nameStake(string memory _name, bool unstake_or_stake, uint amount, uint nameID, address candidate) public{
   		address sender = msg.sender;
-  		require( !unstake_or_stake || amount <= balanceOf(sender) - _UINT(LOCKEDRESOLVES,sender) );
-  		RNS.API(sender, _name, unstake_or_stake, amount, candidate);
   		if(unstake_or_stake){
+  			require( sufficientResolves(amount, true) );
   			lockedResolves[sender] += amount;
-  		}else{
+  		}else{	
   			lockedResolves[sender] -= amount;
   		}
+  		RNS.API(sender, _name, unstake_or_stake, amount, nameID, candidate);
+  	}
+
+  	function sufficientResolves(uint amount, bool colored) internal view returns(bool){
+  		address sender = msg.sender;
+  		if( amount <= ( colored ? _UINT(COLOREDRESOLVES,sender) : balanceOf(sender) ) - _UINT(LOCKEDRESOLVES,sender) )
+  		return true;
+		revert();
   	}
 
 }
@@ -718,7 +689,7 @@ contract ResolveNamingService{
 	mapping(uint => address) public ownerOfName;
 	mapping(uint => string) public  name;
 	mapping(uint => mapping(address => address)) public yourCandidateForName;
-	mapping(uint => mapping(address => uint)) public votesForCandidate;
+	mapping(uint => mapping(address => uint)) public resolvesLockedForName;
 	mapping(uint => mapping(address => uint)) public candidatesWeightForName;
 	mapping(address => nameList) namesInteractedWith;
 	
@@ -735,21 +706,22 @@ contract ResolveNamingService{
 	constructor(address _owner) public{
 		owner = _owner;
 	}
+
 	function getNameID(string memory _name) public pure returns(uint){
 		return (uint)( keccak256( abi.encodePacked( _name , "these") ) );
 	}
 	event Stake( address user, string _name, uint amount, address candidate );
 	event Unstake( address user, string _name, uint amount );
 	event NewNameOwner( uint nameID, address owner );
-	function API( address user, string calldata _name, bool unstake_or_stake, uint amount, address candidate ) external ownerOnly(){
-		uint nameID = getNameID(_name);
-		if( unstake_or_stake ){
+	function API( address user, string calldata _name, bool unstake_or_stake, uint amount, uint nameID, address candidate ) external ownerOnly(){
+		if( unstake_or_stake == true ){
+			nameID = getNameID( _name );
 			//STAKE
 			if(!namesInteractedWith[user].alreadyListed[nameID]){
 				namesInteractedWith[user].nameIDs.push(nameID);
 				namesInteractedWith[user].alreadyListed[nameID] = true;
 			}
-			if(!namesInteractedWith[0x0000000000000000000000000000000000000000].alreadyListed[nameID]){
+			if( !namesInteractedWith[0x0000000000000000000000000000000000000000].alreadyListed[nameID] ){
 				namesInteractedWith[0x0000000000000000000000000000000000000000].nameIDs.push(nameID);
 				namesInteractedWith[0x0000000000000000000000000000000000000000].alreadyListed[nameID] = true;
 			}
@@ -758,42 +730,63 @@ contract ResolveNamingService{
 			uint carryOverWeight = 0;
 			
 			if(candidate != yourCandidateForName[nameID][user]){
-				carryOverWeight = votesForCandidate[nameID][user];
+				carryOverWeight = resolvesLockedForName[nameID][user];
 				candidatesWeightForName[nameID][candidate] -= carryOverWeight;
 			}
+
 			yourCandidateForName[nameID][user] = candidate;
-			votesForCandidate[nameID][user] += amount;
+			resolvesLockedForName[nameID][user] += amount;
 			candidatesWeightForName[nameID][candidate] += amount + carryOverWeight;
 
 			if( candidatesWeightForName[nameID][candidate] > candidatesWeightForName[nameID][ ownerOfName[nameID] ] ){
 				ownerOfName[nameID] = candidate;
 				emit NewNameOwner( nameID, candidate );
 			}
+
 			emit Stake(user, _name, amount, candidate);
-		
 		}else{
 			//UNSTAKE
-			require( amount <= votesForCandidate[nameID][user], "Not that many resolve tokens locked into that name" );
+			require( amount <= resolvesLockedForName[nameID][user], "Not that many resolve tokens locked into that name" );
 			
-			votesForCandidate[nameID][user] -= amount;
+			resolvesLockedForName[nameID][user] -= amount;
 			candidatesWeightForName[nameID][ yourCandidateForName[nameID][user] ] -= amount;
-			emit Unstake(user, _name, amount);
+			emit Unstake(user, name[nameID], amount);
 		}
 	}
 
-	function getNameList(address user) public view returns( uint[] memory,  uint[] memory, address[] memory, address[] memory ){
+	function getNameList(address user) public view returns( uint[] memory, uint[] memory, address[] memory, address[] memory,   bytes32[] memory ){
 		uint L = namesInteractedWith[user].nameIDs.length;
 		uint[] memory nameIDs = new uint[](L);
-		uint[] memory yourWeights = new uint[](L);
+		//uint[] memory yourWeights = new uint[](L);
+		//uint[] memory candidatesTotalWeights = new uint[](L);
+		uint[] memory weights = new uint[](L*3);
 		address[] memory yourCandidate = new address[](L);
 		address[] memory currentHolder = new address[](L);
+		bytes32[] memory _names = new bytes32[](L);
 		uint nameID;
 		for(uint i = 0; i < L; i+=1){
 			nameID = namesInteractedWith[user].nameIDs[i];
 			nameIDs[i] = nameID;
-			yourWeights[i] = votesForCandidate[nameID][user];
 			yourCandidate[i] = yourCandidateForName[nameID][user];
+			weights[i] = resolvesLockedForName[nameID][user];
+			weights[L+i] = candidatesWeightForName[nameID][yourCandidate[i]];
+			weights[L*2+i] = candidatesWeightForName[nameID][ownerOfName[nameID]];
 			currentHolder[i] = ownerOfName[nameID];
+			//leadersTotalWeights[i] = candidatesWeightForName[nameID][ownerOfName[nameID]];
+			_names[i] = stringToBytes32( name[nameID] );
+		}
+		return (nameIDs, weights, yourCandidate, currentHolder, _names);
+	}
+	
+	function stringToBytes32(string memory source) internal pure returns (bytes32 result) {
+		bytes memory tempEmptyStringTest = bytes(source);
+		if (tempEmptyStringTest.length == 0) {
+				return 0x0;
+		}
+
+		assembly {
+			result := mload(add(source, 32))
 		}
 	}
+
 }
