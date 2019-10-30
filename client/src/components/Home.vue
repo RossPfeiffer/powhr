@@ -24,7 +24,7 @@
         <a class="button">Telegram</a>-->
         <!--<Countdown :end="personalizedTime"></Countdown>-->
         <!--<Countdown :end="personalizedTime"></Countdown>-->
-        <a href="https://gist.github.com/Econymous/2e7aa07622bf55619b9790f2fb2190c8" class="button">Git</a>
+        <a href="https://github.com/Econymous/powhr/tree/master/smart-contract" class="button">Git</a>
         <router-link class="button" to="/contract">Exchange</router-link>
         <a href="https://t.me/PrismTokenomics" class="button" target="_blank">Telegram</a>
 
