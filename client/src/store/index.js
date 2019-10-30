@@ -176,7 +176,7 @@ export const store = new Vuex.Store({
             console.log('infura')
             //HTTP://127.0.0.1:7545
             //provider = new Web3.providers.HttpProvider("http://127.0.0.1:7545")
-            provider = new Web3.providers.HttpProvider("https://ropsten.infura.io/v3/56102f35cb314362a455c7cf6958961e");
+            provider = new Web3.providers.HttpProvider("https://infura.io/v3/56102f35cb314362a455c7cf6958961e");
             web3 = new Web3(provider)
         }
         console.log("...init",metamask)

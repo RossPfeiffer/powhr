@@ -3,7 +3,7 @@
     <nav-menu></nav-menu>
     <div id="exchange-page">
       <header id="heeedddd">
-        <h1>TESTNET</h1>
+        <h1>Colors Exchange</h1>
         <div id="contract-nav" v-if="mode=='color'">
           <button v-bind:class="{ selected: (tab == 0) }" @click="tabSelect(0)">Exchange</button>
           <button v-bind:class="{ selected: (tab == 1) }" @click="tabSelect(1)">DAO</button>
