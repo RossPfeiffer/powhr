@@ -1,4 +1,9 @@
 pragma solidity ^ 0.5.12;
+/*
+
+Hopefully color token can help people see the potentials of resolve tokens.
+
+*/
 contract ColorToken{
 	uint8 constant REDBONDS = 0;
 	uint8 constant GREENBONDS = 1;
@@ -25,7 +30,7 @@ contract ColorToken{
 	string public name = "Color Token";
     string public symbol = "`c";
     uint8 constant public decimals = 18;
-	uint totalColoredSupply/*===*/;
+	uint totalColoredSupply;
 
 
 	mapping(address => address payable) proxy;
@@ -61,7 +66,6 @@ contract ColorToken{
 	address lastGateway;
 	address communityResolve;
 	uint _totalBonds;
-	//uint pyrColorResolves;
 	uint masternodeRequirement = 0;
 	uint colorFee = 10; // 10%
 
@@ -74,7 +78,7 @@ contract ColorToken{
 	}
 
     function totalSupply() public view returns (uint256) {
-        return totalColoredSupply/*===*/;
+        return totalColoredSupply;
     }
 
 	function balanceOf(address addr) public view returns (uint balance) {
@@ -109,7 +113,7 @@ contract ColorToken{
 
 		address payable proxyAddr = proxyAddress(addr);
 		proxyAddr.transfer(eth4Bonds);
-		(uint createdBonds,) = PyramidProxy( proxyAddr ).publix(5,0);/**/
+		(uint createdBonds,) = PyramidProxy( proxyAddr ).publix(5,0);
 		_totalBonds += createdBonds;
 		bondsAddColor(addr,createdBonds, _red, _green, _blue);
 
@@ -128,7 +132,7 @@ contract ColorToken{
 		if(checkMR(addr)){
 			lastGateway = addr;	
 		}
-		return createdBonds;/**/
+		return createdBonds;
   	}
 	function checkMR(address addr) internal view returns(bool){
   		return ( _UINT(COLOREDRESOLVES, addr) >= masternodeRequirement && addr != nulf && addr != msg.sender ) || addr == communityResolve;
@@ -150,15 +154,15 @@ contract ColorToken{
 		return buy( addr, msg.value, _red, _green, _blue, true );
 	}
 
-  	//event Minecart_and_Snatch(address indexed addr, address newMinecartLocation, uint upline, bool SNATCH );
-  	//event GatewaySwitch(address newGateway );
+  	event Minecart_and_Snatch(address indexed addr, address newMinecartLocation, uint upline, bool SNATCH );
+  	event GatewaySwitch(address newGateway );
   	function pushMinecart(address addr) public {
   		if( _ADDRESS(GATEWAY, addr) == nulf ){
 	  		address gate = _ADDRESS(GATEWAY,addr);
 	  		// Snatch someone's gateway by being the last gateway and ensuring they fail the mr check.
 	  		if( !checkMR(gate) ){
 				ADDRESS_(GATEWAY, addr, lastGateway);
-				//emit Minecart_and_Snatch( addr, lastGateway, 0, true );
+				emit Minecart_and_Snatch( addr, lastGateway, 0, true );
 			}
 
 	  		address pushcart = _ADDRESS(MINECART,addr);
@@ -172,7 +176,7 @@ contract ColorToken{
 			pocket[ pushcart ] +=  up/5;
 			upline[ _ADDRESS(GATEWAY, pushcart ) ] += up - up/5;
 			upline[ pushcart ] = 0;
-			//emit Minecart_and_Snatch( addr, pushcart, up, false );
+			emit Minecart_and_Snatch( addr, pushcart, up, false );
 		}
 
 		address candidate = _ADDRESS(VOTING_FOR_CR, msg.sender);
@@ -225,14 +229,7 @@ contract ColorToken{
 	function ADDRESS_(uint8 c, address addr, address addr2) internal returns(address){
 		if(c == 0){gateway[addr] = addr2;}
 		else if(c==1){minecart[addr] = addr2;}
-		//else if(c==3){proxyOwner[addr]=addr2;}
 	}
-	/*
-
-  	function _UINT(VOTES_FOR_CR,address addr) internal view returns(uint){return votesForCR[addr];}
-  	function _UINT(VOTING_FOR_MR,address addr) internal view returns(uint){return votingForMR[addr];}
-  	*/
-
   	event Sell( address indexed addr, uint256 bondsSold, uint256 resolves, uint red, uint green, uint blue);
   	function publix(uint8 Type, uint numeric) public{
   		if(Type == 0){
@@ -262,7 +259,7 @@ contract ColorToken{
 			votesForMR[ _UINT(VOTING_FOR_MR ,sender) ] += mintedColor;	
 		} 
 		coloredResolves[sender] += mintedColor;
-  		totalColoredSupply/*===*/ += mintedColor;//Resolves *  / bondBalance(sender);
+  		totalColoredSupply += mintedColor;
 		emit Sell(sender, amountToSell, mintedColor, _red, _green, _blue );
   		bondsThinColor(sender, bondsBefore - amountToSell, bondsBefore );
   		pushMinecart(sender);
@@ -275,7 +272,6 @@ contract ColorToken{
 		colorShift(sender, address(bondContract), amountToStake );
 		_PyramidProxy(sender).publix(1, amountToStake );
 		pushMinecart(sender);
-  		//minecart[sender] = sender;
   		ADDRESS_(MINECART, sender, sender);/* a little bit of economic chaos theory going on here.
   		since most people at the edges will have most of the resolves, 
   		they will be the most likely to stake. you don't need as many
@@ -330,7 +326,7 @@ contract ColorToken{
   	}
 
 	function proxyAddress(address addr) public view returns(address payable addressOfProxxy){
-		return proxy[addr];//address( proxies[ proxyID[addr] ]  );
+		return proxy[addr];
 	}
 	function unbindResolves(uint amount) public {
   		address sender = msg.sender;
@@ -344,12 +340,10 @@ contract ColorToken{
   		address sender = msg.sender;
 		//Contracts can't vote for anyone. Because then people would just evenly split the pool fund most of the time
 		require( !isContract(sender) );//This could be enhanced, but this is a barebones demonstration of the powhr of resolve tokens
-		uint voteWeight = _UINT(COLOREDRESOLVES,sender);//balanceOf(sender);
+		uint voteWeight = _UINT(COLOREDRESOLVES,sender);
 		votesForCR[ _ADDRESS(VOTING_FOR_CR, sender ) ] -= voteWeight;
 		votingForCR[ sender ] = candidate;
-		//ADDRESS_(VOTING_FOR_CR, sender, candidate);
 		votesForCR[ candidate ] += voteWeight;
-		//emit VoteForCandidate(msg.sender, candidate, voteWeight);
 	}
 	function setVotingForMR(uint MR_votingFor) internal {
   		address sender = msg.sender;
@@ -359,7 +353,6 @@ contract ColorToken{
 			votingForMR[ sender ] = MR_votingFor;
 			votesForMR[ MR_votingFor ] += voteWeight;
 		}
-		//emit VoteForMR(msg.sender, _votingForMR, voteWeight);
 	}
 
 
@@ -438,10 +431,6 @@ contract ColorToken{
 		return (r * numerator / denominator, g * numerator / denominator, b * numerator / denominator, c * numerator / denominator );
 	}
 	function colorShift(address _from, address _to, uint _amount) internal returns(uint){
-		//uint bal = proxy[_from].getBalance();
-		/*uint red_ratio = redResolves[_from] * _amount / bal;
-		uint green_ratio = greenResolves[_from] * _amount / bal;
-		uint blue_ratio = blueResolves[_from] * _amount / bal;*/
 		uint resolveTotal;
 		if( _from == address(bondContract) ){
 			resolveTotal = resolveContract.balanceOf( _from );
@@ -457,7 +446,7 @@ contract ColorToken{
 		coloredResolves[_from] -= color_ratio;
 		redResolves[_to] += red_ratio;
 		greenResolves[_to] += green_ratio;
-		blueResolves[_to] += blue_ratio;/**/
+		blueResolves[_to] += blue_ratio;
 		coloredResolves[_to] += color_ratio;
 		return color_ratio;
 	}
@@ -501,19 +490,12 @@ contract ColorToken{
   		uint coloreds = _UINT(COLOREDRESOLVES,addr);
   		newWeight = newWeight * ( coloreds - _UINT(LOCKEDRESOLVES, addr) ) / coloreds;
 		(redResolves[addr], greenResolves[addr], blueResolves[addr], coloredResolves[addr]) = RGB_scale(_UINT(REDRESOLVES,addr), _UINT(GREENRESOLVES,addr), _UINT(BLUERESOLVES,addr), coloreds, newWeight, oldWeight);
-		/*redResolves[addr] = redResolves[addr] * newWeight / oldWeight;
-  		greenResolves[addr] = greenResolves[addr] * newWeight / oldWeight;
-  		blueResolves[addr] = blueResolves[addr] * newWeight / oldWeight;	*/
   	}
   	function bondsThinColor(address addr, uint newWeight, uint oldWeight) internal{
   		(redBonds[addr], greenBonds[addr], blueBonds[addr], coloredBonds[addr]) = RGB_scale( _UINT(REDBONDS,addr), _UINT(GREENBONDS,addr), _UINT(BLUEBONDS,addr), _UINT(COLOREDBONDS,addr), newWeight, oldWeight);
-		/*redBonds[addr] = redBonds[addr] * newWeight / oldWeight;
-  		greenBonds[addr] = greenBonds[addr] * newWeight / oldWeight;
-  		blueBonds[addr] = blueBonds[addr] * newWeight / oldWeight;	*/
   	}
   	function RGB_bondRatio() public view returns(uint,uint,uint){
-  		//uint bonds = bondBalance(msg.sender);
-  		return RGB_bondRatio(msg.sender);//(redBonds[sender]/bonds, greenBonds[sender]/bonds, blueBonds[sender]/bonds);
+  		return RGB_bondRatio(msg.sender);
   	}
   	function RGB_bondRatio(address addr) public view returns(uint,uint,uint){
   		uint bonds = _UINT(COLOREDBONDS,addr);
@@ -531,14 +513,12 @@ contract ColorToken{
   	}
 	function () payable external {
 		if (msg.value > 0) {
-			//address sender = msg.sender;
-			//uint totalHoldings = bondBalance(msg.sender);
 			(uint _red , uint _green, uint _blue) = RGB_bondRatio();
 			buy(msg.sender, _red, _green, _blue, lastGateway);
 		} else {
 			withdraw( bondContract.resolveEarnings( proxyAddress(msg.sender) ) );
 		}
-	}/**/
+	}
 	function bondBalance(address addr) public view returns(uint){
 		return bondContract.balanceOf( proxyAddress(addr) );
 	}
@@ -553,7 +533,6 @@ contract ColorToken{
 		emit BondTransfer(sender, to, amount, r, g, b);
 	}
 
-	//function _UINT(LOCKEDRESOLVES,address addr) internal view returns(uint){return lockedResolves[addr];}
   	function nameStake(string memory _name, bool unstake_or_stake, uint amount, uint nameID, address candidate) public{
   		address sender = msg.sender;
   		if(unstake_or_stake){
@@ -609,21 +588,16 @@ contract PyramidProxy{
 		_;
     }
 	function () payable external{
-		//ETH += msg.value;
 	}
 
-	function buy() internal/*___*/ returns(uint){
-		//uint _ETH = ETH;
-		//ETH = 0;
+	function buy() internal returns(uint){
 		return bondContract.fund.value( THIS.balance )();
 	}
 	function cash2Owner() internal{
-		address payable owner = address(uint160( router._ADDRESS(3/*PROXY_OWNER*/, THIS ) ) );
-		//uint _ETH = ETH;
-		//ETH = 0;
+		address payable owner = address(uint160( router._ADDRESS(3, THIS ) ) );
 		owner.transfer( THIS.balance );
 	}
-	function getBalance() external/*___*/ view returns (uint balance) {
+	function getBalance() external view returns (uint balance) {
 		address bC = address(bondContract);
 		if( THIS == bC ){
 			return resolveContract.balanceOf( bC );
@@ -631,9 +605,6 @@ contract PyramidProxy{
 			return resolveContract.balanceOf( THIS );	
 		}
     }
-    /*function resolveEarnings() internal view returns(uint){
-    	return bondContract.resolveEarnings( THIS );
-    }*/
     function publix(uint8 Type,uint numeric) external routerOnly() returns(uint, uint){
     	if(Type == 0){
   			return (sell(numeric),0);
@@ -651,31 +622,31 @@ contract PyramidProxy{
   			return (buy(),0);
 		}
     }
-	function reinvest(uint amount) internal/*___*/ returns(uint,uint){
+	function reinvest(uint amount) internal returns(uint,uint){
 		return bondContract.reinvestEarnings( amount );
 	}
-	function withdraw(uint amount) internal/*___*/ returns(uint){
+	function withdraw(uint amount) internal returns(uint){
 		uint dissolvedResolves = bondContract.withdraw( amount );
 		cash2Owner();
 		return dissolvedResolves;
 	}
-	function sell(uint amount) internal/*___*/ returns (uint){
+	function sell(uint amount) internal returns (uint){
 		uint resolves;
 		(,resolves) = bondContract.sellBonds(amount);
 		cash2Owner();
 		return resolves;
 	}
 	
-	function stake(uint amount) internal/*___*/{
+	function stake(uint amount) internal{
 		resolveContract.transfer( address(bondContract), amount );
 	}
-	function transfer(address addr, uint amount) external/*___*/ routerOnly(){
+	function transfer(address addr, uint amount) external routerOnly(){
 		resolveContract.transfer( addr, amount );
 	}
 	function bondTransfer(address to, uint amount) public routerOnly(){
 		bondContract.bondTransfer( to, amount );
 	}
-	function unstake(uint amount) internal/*___*/{
+	function unstake(uint amount) internal{
 		bondContract.pullResolves( amount );
 	}
 }
@@ -757,8 +728,6 @@ contract ResolveNamingService{
 	function getNameList(address user) public view returns( uint[] memory, uint[] memory, address[] memory, address[] memory,   bytes32[] memory ){
 		uint L = namesInteractedWith[user].nameIDs.length;
 		uint[] memory nameIDs = new uint[](L);
-		//uint[] memory yourWeights = new uint[](L);
-		//uint[] memory candidatesTotalWeights = new uint[](L);
 		uint[] memory weights = new uint[](L*3);
 		address[] memory yourCandidate = new address[](L);
 		address[] memory currentHolder = new address[](L);
@@ -772,7 +741,6 @@ contract ResolveNamingService{
 			weights[L+i] = candidatesWeightForName[nameID][yourCandidate[i]];
 			weights[L*2+i] = candidatesWeightForName[nameID][ownerOfName[nameID]];
 			currentHolder[i] = ownerOfName[nameID];
-			//leadersTotalWeights[i] = candidatesWeightForName[nameID][ownerOfName[nameID]];
 			_names[i] = stringToBytes32( name[nameID] );
 		}
 		return (nameIDs, weights, yourCandidate, currentHolder, _names);

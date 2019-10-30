@@ -1,4 +1,13 @@
 pragma solidity ^ 0.5.12;
+/*
+          ,/`.
+        ,'/ __`.
+      ,'_/__ _ _`.
+    ,'__/__ _ _  _`.
+  ,'_  /___ __ _ __ `.
+ '-.._/___ _ __ __  __`.
+
+*/
 contract Pyramid{
 	// scaleFactor is used to convert Ether into bonds and vice-versa: they're of different
 	// orders of magnitude, hence the need to bridge between the two.
@@ -7,7 +16,11 @@ contract Pyramid{
 	int constant crr_n = 1;
 	int constant crr_d = 2;
 
-	int constant public price_coeff = -0x1337FA66607BADA55;
+	// 1 Configuration. The slope of the Pyramid.
+	// The single source of human input,
+	// a balance of wisdom & desire
+	// Everyething else should be organic beyond this point
+	int constant public soul = -0x1337FA66607BADA55;// 3-ish | Like 3 points in a Pyramid
 
 	// Typical values that we have to declare.
 	string constant public name = "Bond";
@@ -48,8 +61,7 @@ contract Pyramid{
 	// base time on when the contract was created
 	uint public genesis;
 
-	// Aggregate sum of all payouts.
-	// Note that this is scaled by the scaleFactor variable.
+	// Something about invarience.
 	int256 earningsOffset;
 
 	// Variable tracking how much Ether each token is currently worth.
@@ -193,10 +205,10 @@ contract Pyramid{
 		uint reserveAmount = reserve();
 
 		if(buy_or_sell){
-			uint x = fixedExp((fixedLog(_totalSupply + bonds) - price_coeff) * crr_d/crr_n);
+			uint x = fixedExp((fixedLog(_totalSupply + bonds) - soul) * crr_d/crr_n);
 			return x - reserveAmount;
 		}else{
-			uint x = fixedExp((fixedLog(_totalSupply - bonds) - price_coeff) * crr_d/crr_n);
+			uint x = fixedExp((fixedLog(_totalSupply - bonds) - soul) * crr_d/crr_n);
 			return reserveAmount - x;
 		}
 	}
@@ -341,12 +353,12 @@ contract Pyramid{
 	// Calculates the number of bonds that can be bought for a given amount of Ether, according to the
 	// dynamic reserve and _totalSupply values (derived from the buy and sell prices).
 	function getBondsForEther(uint256 ethervalue) public view returns (uint256 bonds) {
-		return SafeMath.sub(fixedExp( fixedLog( reserve() + ethervalue ) * crr_n/crr_d + price_coeff ) , _totalSupply);
+		return SafeMath.sub(fixedExp( fixedLog( reserve() + ethervalue ) * crr_n/crr_d + soul ) , _totalSupply);
 	}
 
 	// Semantically similar to getBondsForEther, but subtracts the callers balance from the amount of Ether returned for conversion.
 	function calculateBondsFromReinvest(uint256 ethervalue, uint256 subvalue) public view returns (uint256 bondTokens) {
-		return SafeMath.sub(fixedExp(fixedLog(SafeMath.sub(reserve() , subvalue) + ethervalue)*crr_n/crr_d + price_coeff) , _totalSupply);
+		return SafeMath.sub(fixedExp(fixedLog(SafeMath.sub(reserve() , subvalue) + ethervalue)*crr_n/crr_d + soul) , _totalSupply);
 	}
 
 	// Converts a number bonds into an Ether value.
@@ -362,7 +374,7 @@ contract Pyramid{
 		// corresponding to the equation in Dr Jochen Hoenicke's original Ponzi paper, which can be found
 		// at https://test.jochen-hoenicke.de/eth/ponzitoken/ in the third equation, with the CRR numerator
 		// and denominator altered to 1 and 2 respectively.
-		return SafeMath.sub(reserveAmount, fixedExp( ( fixedLog(_totalSupply-bondTokens)-price_coeff ) * crr_d/crr_n) );
+		return SafeMath.sub(reserveAmount, fixedExp( ( fixedLog(_totalSupply-bondTokens)-soul ) * crr_d/crr_n) );
 	}
 
 	// You don't care about these, but if you really do they're hex values for
